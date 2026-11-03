@@ -4,9 +4,8 @@ const JWT_KEY = 'paygame_secret_key';
 // Check JWT
 function verifyToken(req, res, next) {
     const header = req.headers['authorization'];
-    const token = header.split(' ')[1];
-
     if (!header) return res.status(401).send('Token required');
+    const token = header.split(' ')[1];
     if (!token) return res.status(401).send('Invalid token');
 
     try {
