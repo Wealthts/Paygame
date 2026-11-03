@@ -4,10 +4,11 @@
   },
   "name": "server",
   "version": "1.0.0",
-  "description": "",
+  "description": "- node -v\r - cmd\r - npm init -y\r - npm install express mysql2 cors\r - npm install @node-rs/argon2\r - npm install jsonwebtoken\r - node --watch app.js",
   "main": "index.js",
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
+    "argon2": "^0.45.1",
     "chalk": "^5.6.2",
     "chokidar": "^5.0.0",
     "colorette": "^2.0.20",

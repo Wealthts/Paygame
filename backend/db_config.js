@@ -1,16 +1,15 @@
-const mysql = require("mysql2");
+const mysql = require('mysql2');
+
 const con = mysql.createConnection({
-    host: '127.0.0.1',
+    host: 'localhost',
     user: 'root',
-    password: 'root',
-    database: 'todo'
+    password: '',
+    database: 'paygame'
 });
 
 con.connect((err) => {
-    if (err) {
-        console.error('MySQL connection failed:', err.message);
-    }
+    if (err) return console.log('Database connection failed:', err);
+    console.log('Connected to paygame database');
 });
 
 module.exports = con;
-
