@@ -66,7 +66,7 @@ router.post('/login', (req, res) => {
         };
 
         const token = jwt.sign(payload, JWT_KEY, {
-            expiresIn: '1h'
+            expiresIn: '30min'
         });
 
         res.json({
