@@ -6,6 +6,20 @@ const { Version } = require('@node-rs/argon2');
 
 const router = express.Router();
 
+// get all package for test
+router.get('/test/:game_id', (req, res) => {
+    const game_id = req.params.game_id;
+    const sql = "SELECT * FROM packages WHERE game_id = ?";
+
+    con.query(sql, [game_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
+        return res.json(result);
+    });
+});
+
 // get all packages by game_id
 router.get('/:game_id', (req, res) => {
     const game_id = req.params.game_id;
@@ -76,11 +90,11 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
         !price === '' ||
         (is_active !== 0 && is_active !== 1)
     ) {
-        return res.status(400).send("Invalid data");
+        return res.status(400).send("Invalid data 1");
     }
 
-    if (Number.isFinite(Number(price)) || Number(price) <= 0) {
-        return res.status(400).send("Invalid data");
+    if (!Number.isInteger(Number(price)) || Number(price) <= 0) {
+        return res.status(400).send("Invalid data 2");
     }
 
     con.query(sql, [package_name, price, is_active, id], (err, result) => {
@@ -95,3 +109,5 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
         return res.send("Package updated successfully");
     });
 });
+
+module.exports = router;

@@ -18,7 +18,7 @@ const receiptRoutes = require('./routes/receipts');
 // Use Routes
 app.use('/api', authRoutes);
 app.use('/api/games', gameRoutes);
-app.use('/api/package', packageRoutes);
+app.use('/api/packages', packageRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/receipts', receiptRoutes);
