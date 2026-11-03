@@ -1,89 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../controllers/receipt_controller.dart';
-import '../models/receipt.dart';
 import '../theme/app_colors.dart';
-import '../utils/formatters.dart';
 import 'widgets/dashed_divider.dart';
 
-/// หน้า E-Receipt (MVC: ฝั่ง View)
-class ReceiptScreen extends StatefulWidget {
-  final String orderCode;
-  final VoidCallback? onViewPoints;
-
-  const ReceiptScreen({super.key, this.orderCode = 'GP-0042', this.onViewPoints});
-
-  @override
-  State<ReceiptScreen> createState() => _ReceiptScreenState();
-}
-
-class _ReceiptScreenState extends State<ReceiptScreen> {
-  final _controller = ReceiptController();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.load(widget.orderCode);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveReceipt(Receipt r) async {
-    await Clipboard.setData(ClipboardData(text: _controller.toShareText(r)));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('คัดลอกรายละเอียดใบเสร็จแล้ว')),
-    );
-  }
+/// หน้า E-Receipt (UI อย่างเดียว ข้อมูลเป็นตัวอย่าง)
+class ReceiptScreen extends StatelessWidget {
+  const ReceiptScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.red,
       body: SafeArea(
-        child: ListenableBuilder(
-          listenable: _controller,
-          builder: (context, _) {
-            final r = _controller.receipt;
-            if (_controller.isLoading || r == null) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.gold));
-            }
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-              children: [
-                _SuccessHeader(success: r.isSuccess),
-                const SizedBox(height: 20),
-                _ReceiptCard(receipt: r),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => _saveReceipt(r),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.goldInk,
-                    minimumSize: const Size.fromHeight(52),
-                  ),
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('บันทึกใบเสร็จ'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: widget.onViewPoints,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.white,
-                    side: const BorderSide(color: AppColors.white, width: 2),
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text('ดูแต้มสะสม', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                ),
-              ],
-            );
-          },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+          children: [
+            const _SuccessHeader(),
+            const SizedBox(height: 20),
+            const _ReceiptCard(),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {},
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.goldInk,
+                minimumSize: const Size.fromHeight(52),
+              ),
+              icon: const Icon(Icons.download_rounded),
+              label: const Text('บันทึกใบเสร็จ'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.white,
+                side: const BorderSide(color: AppColors.white, width: 2),
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('กลับหน้าแรก', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            ),
+          ],
         ),
       ),
     );
@@ -91,8 +48,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 }
 
 class _SuccessHeader extends StatelessWidget {
-  final bool success;
-  const _SuccessHeader({required this.success});
+  const _SuccessHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -106,21 +62,17 @@ class _SuccessHeader extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.goldLight, width: 4),
           ),
-          child: Icon(
-            success ? Icons.check_rounded : Icons.close_rounded,
-            size: 42,
-            color: AppColors.redDark,
-          ),
+          child: const Icon(Icons.check_rounded, size: 42, color: AppColors.redDark),
         ),
         const SizedBox(height: 12),
-        Text(
-          success ? 'เติมเงินสำเร็จ!' : 'เติมเงินไม่สำเร็จ',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.white),
+        const Text(
+          'เติมเงินสำเร็จ!',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.white),
         ),
         const SizedBox(height: 4),
-        Text(
-          success ? 'คูปองเข้าบัญชีเกมเรียบร้อยแล้ว' : 'ระบบไม่ได้ตัดเงินจากบัญชีของคุณ',
-          style: const TextStyle(fontSize: 14, color: AppColors.peach),
+        const Text(
+          'คูปองเข้าบัญชีเกมเรียบร้อยแล้ว',
+          style: TextStyle(fontSize: 14, color: AppColors.peach),
         ),
       ],
     );
@@ -128,12 +80,10 @@ class _SuccessHeader extends StatelessWidget {
 }
 
 class _ReceiptCard extends StatelessWidget {
-  final Receipt receipt;
-  const _ReceiptCard({required this.receipt});
+  const _ReceiptCard();
 
   @override
   Widget build(BuildContext context) {
-    final r = receipt;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(22)),
@@ -153,39 +103,67 @@ class _ReceiptCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              _StatusPill(success: r.isSuccess),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.successBg,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'SUCCESS',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success),
+                ),
+              ),
             ],
           ),
           const DashedDivider(),
-          _Line('เลขที่ใบเสร็จ', r.receiptNumber, bold: true),
-          _Line('วันที่', Fmt.thaiDateTime(r.issuedAt)),
-          _Line('เกม', r.gameName),
-          _Line('แพ็กเกจ', r.packageName),
-          _Line('UID', r.playerUid, bold: true),
-          _Line('ช่องทาง', r.paymentMethod),
+          const _Line('เลขที่ใบเสร็จ', 'GP-20261029-0042', bold: true),
+          const _Line('วันที่', '29 ต.ค. 2569 · 16:42'),
+          const _Line('เกม', 'ROV'),
+          const _Line('แพ็กเกจ', '400 คูปอง'),
+          const _Line('UID', '1234567890', bold: true),
+          const _Line('ช่องทาง', 'QR พร้อมเพย์'),
           const DashedDivider(),
-          _Line('ราคา', Fmt.baht(r.originalPrice)),
-          if (r.discountAmount > 0)
-            _Line(
-              'ส่วนลดแต้ม (${Fmt.number(r.pointsUsed)} แต้ม)',
-              '−${Fmt.baht(r.discountAmount)}',
-              valueColor: AppColors.red,
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+          const _Line('ราคา', '฿350.00'),
+          const _Line('ส่วนลดแต้ม (100 แต้ม)', '−฿10.00', valueColor: AppColors.red),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                const Text('ยอดชำระ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Text('ยอดชำระ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                Spacer(),
                 Text(
-                  Fmt.baht(r.totalAmount),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.red),
+                  '฿340.00',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.red),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          if (r.isSuccess) _PointsEarnedBox(earned: r.pointsEarned, balance: r.pointsBalanceAfter),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.gold, width: 1.5),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.star_outline_rounded, color: AppColors.goldText, size: 30),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ได้รับ +34 แต้ม',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.goldText),
+                    ),
+                    Text('แต้มคงเหลือ 1,184 แต้ม', style: TextStyle(fontSize: 12, color: AppColors.inkMuted)),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -219,67 +197,6 @@ class _Line extends StatelessWidget {
                 color: valueColor ?? AppColors.ink,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final bool success;
-  const _StatusPill({required this.success});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: success ? AppColors.successBg : AppColors.dangerBg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        success ? 'SUCCESS' : 'FAILED',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: success ? AppColors.success : AppColors.danger,
-        ),
-      ),
-    );
-  }
-}
-
-class _PointsEarnedBox extends StatelessWidget {
-  final int earned;
-  final int balance;
-  const _PointsEarnedBox({required this.earned, required this.balance});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cream,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.gold, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.star_outline_rounded, color: AppColors.goldText, size: 30),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ได้รับ +${Fmt.number(earned)} แต้ม',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.goldText),
-              ),
-              Text(
-                'แต้มคงเหลือ ${Fmt.number(balance)} แต้ม',
-                style: const TextStyle(fontSize: 12, color: AppColors.inkMuted),
-              ),
-            ],
           ),
         ],
       ),

@@ -1,90 +1,48 @@
 import 'package:flutter/material.dart';
 
-import '../controllers/points_controller.dart';
-import '../models/point_transaction.dart';
-import '../models/reward.dart';
 import '../theme/app_colors.dart';
-import '../utils/formatters.dart';
 
-/// หน้า Reward / Point System (MVC: ฝั่ง View)
+/// หน้า Reward / Point System (UI อย่างเดียว ข้อมูลเป็นตัวอย่าง)
 class RewardsScreen extends StatelessWidget {
-  final PointsController controller;
-
-  const RewardsScreen({super.key, required this.controller});
-
-  Future<void> _confirmRedeem(BuildContext context, Reward reward) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.white,
-        title: const Text('ยืนยันการแลก', style: TextStyle(fontWeight: FontWeight.w600)),
-        content: Text('ใช้ ${Fmt.number(reward.pointsCost)} แต้ม แลก "${reward.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก', style: TextStyle(color: AppColors.inkMuted)),
-          ),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('แลกเลย')),
-        ],
-      ),
-    );
-    if (ok != true || !context.mounted) return;
-
-    final success = controller.redeem(reward);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: success ? AppColors.success : AppColors.danger,
-        content: Text(success ? 'แลกสำเร็จ! คูปองจะใช้ได้ในการเติมครั้งถัดไป' : 'แต้มไม่พอสำหรับรางวัลนี้'),
-      ),
-    );
-  }
+  const RewardsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _PointsHeader(controller: controller)),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                sliver: SliverList.list(
-                  children: [
-                    const _SectionTitle('แลกของรางวัล'),
-                    const SizedBox(height: 10),
-                    for (final r in controller.rewards) ...[
-                      _RewardTile(
-                        reward: r,
-                        enabled: controller.canRedeem(r),
-                        onRedeem: () => _confirmRedeem(context, r),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    const SizedBox(height: 8),
-                    const _SectionTitle('ความเคลื่อนไหวแต้ม'),
-                    const SizedBox(height: 10),
-                    _HistoryCard(items: controller.transactions),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+      body: CustomScrollView(
+        slivers: [
+          const SliverToBoxAdapter(child: _PointsHeader()),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            sliver: SliverList.list(
+              children: const [
+                _SectionTitle('แลกของรางวัล'),
+                SizedBox(height: 10),
+                _RewardTile(tag: '฿20', name: 'ส่วนลด 20 บาท (ทุกเกม)', cost: '200'),
+                SizedBox(height: 10),
+                _RewardTile(tag: '฿50', name: 'ส่วนลด 50 บาท (ขั้นต่ำ ฿300)', cost: '450'),
+                SizedBox(height: 10),
+                _RewardTile(tag: '5%', name: 'คูปองลด 5% ไม่จำกัดยอด', cost: '800'),
+                SizedBox(height: 10),
+                _RewardTile(tag: '฿150', name: 'ส่วนลด 150 บาท (ขั้นต่ำ ฿1,000)', cost: '1,500', enough: false),
+                SizedBox(height: 18),
+                _SectionTitle('ความเคลื่อนไหวแต้ม'),
+                SizedBox(height: 10),
+                _HistoryCard(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _PointsHeader extends StatelessWidget {
-  final PointsController controller;
-  const _PointsHeader({required this.controller});
+  const _PointsHeader();
 
   @override
   Widget build(BuildContext context) {
-    final tier = controller.tier;
     return Container(
       padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 18, 20, 22),
       decoration: const BoxDecoration(
@@ -122,39 +80,37 @@ class _PointsHeader extends StatelessWidget {
                         color: AppColors.redDark,
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Text(
-                        '${tier.name} MEMBER',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.white),
+                      child: const Text(
+                        'GOLD MEMBER',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.white),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text.rich(
+                const Text.rich(
                   TextSpan(
-                    style: const TextStyle(color: AppColors.goldInk, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: AppColors.goldInk, fontWeight: FontWeight.w700),
                     children: [
-                      TextSpan(text: Fmt.number(controller.balance), style: const TextStyle(fontSize: 38)),
-                      const TextSpan(text: '  แต้ม', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      TextSpan(text: '1,184', style: TextStyle(fontSize: 38)),
+                      TextSpan(text: '  แต้ม', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: controller.tierProgress,
+                  child: const LinearProgressIndicator(
+                    value: 0.59,
                     minHeight: 8,
                     backgroundColor: AppColors.creamDeep,
                     color: AppColors.redDark,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  tier.nextName == null
-                      ? 'คุณอยู่ระดับสูงสุดแล้ว · เติมทุก ฿10 = 1 แต้ม'
-                      : 'อีก ${Fmt.number(controller.pointsToNextTier)} แต้ม เลื่อนเป็น ${tier.nextName} · เติมทุก ฿10 = 1 แต้ม',
-                  style: const TextStyle(fontSize: 12, color: AppColors.goldInk),
+                const Text(
+                  'อีก 816 แต้ม เลื่อนเป็น Platinum · เติมทุก ฿10 = 1 แต้ม',
+                  style: TextStyle(fontSize: 12, color: AppColors.goldInk),
                 ),
               ],
             ),
@@ -175,11 +131,12 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _RewardTile extends StatelessWidget {
-  final Reward reward;
-  final bool enabled;
-  final VoidCallback onRedeem;
+  final String tag;
+  final String name;
+  final String cost;
+  final bool enough;
 
-  const _RewardTile({required this.reward, required this.enabled, required this.onRedeem});
+  const _RewardTile({required this.tag, required this.name, required this.cost, this.enough = true});
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +155,7 @@ class _RewardTile extends StatelessWidget {
               border: Border.all(color: AppColors.red, width: 1.5),
             ),
             child: Text(
-              reward.tag,
+              tag,
               style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.danger, fontSize: 14),
             ),
           ),
@@ -207,24 +164,21 @@ class _RewardTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(reward.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                Text(
-                  'ใช้ ${Fmt.number(reward.pointsCost)} แต้ม',
-                  style: const TextStyle(fontSize: 12, color: AppColors.goldText),
-                ),
+                Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                Text('ใช้ $cost แต้ม', style: const TextStyle(fontSize: 12, color: AppColors.goldText)),
               ],
             ),
           ),
           const SizedBox(width: 8),
           FilledButton(
-            onPressed: enabled ? onRedeem : null,
+            onPressed: enough ? () {} : null,
             style: FilledButton.styleFrom(
               minimumSize: const Size(64, 44),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               disabledBackgroundColor: AppColors.border,
               disabledForegroundColor: AppColors.inkMuted,
             ),
-            child: Text(enabled ? 'แลก' : 'แต้มไม่พอ'),
+            child: Text(enough ? 'แลก' : 'แต้มไม่พอ'),
           ),
         ],
       ),
@@ -233,8 +187,14 @@ class _RewardTile extends StatelessWidget {
 }
 
 class _HistoryCard extends StatelessWidget {
-  final List<PointTransaction> items;
-  const _HistoryCard({required this.items});
+  const _HistoryCard();
+
+  static const _items = [
+    ('เติม ROV · GP-0042', '29 ต.ค.', '+34', true),
+    ('ใช้เป็นส่วนลด · GP-0042', '29 ต.ค.', '−100', false),
+    ('เติม Genshin · GP-0038', '25 ต.ค.', '+53', true),
+    ('โบนัสสมัครสมาชิก', '15 ก.ย.', '+50', true),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -243,11 +203,11 @@ class _HistoryCard extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          for (var i = 0; i < items.length; i++)
+          for (var i = 0; i < _items.length; i++)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                border: i == items.length - 1
+                border: i == _items.length - 1
                     ? null
                     : const Border(bottom: BorderSide(color: AppColors.divider)),
               ),
@@ -257,19 +217,16 @@ class _HistoryCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(items[i].description, style: const TextStyle(fontSize: 14)),
-                        Text(
-                          Fmt.thaiShortDate(items[i].createdAt),
-                          style: const TextStyle(fontSize: 12, color: AppColors.inkMuted),
-                        ),
+                        Text(_items[i].$1, style: const TextStyle(fontSize: 14)),
+                        Text(_items[i].$2, style: const TextStyle(fontSize: 12, color: AppColors.inkMuted)),
                       ],
                     ),
                   ),
                   Text(
-                    Fmt.pointsDelta(items[i].pointsDelta),
+                    _items[i].$3,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: items[i].isPositive ? AppColors.success : AppColors.danger,
+                      color: _items[i].$4 ? AppColors.success : AppColors.danger,
                     ),
                   ),
                 ],

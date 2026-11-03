@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'controllers/points_controller.dart';
 import 'theme/app_theme.dart';
 import 'views/receipt_screen.dart';
 import 'views/rewards_screen.dart';
@@ -23,8 +22,7 @@ class GamePayApp extends StatelessWidget {
   }
 }
 
-/// หน้าเดโมสำหรับสลับดู 2 หน้าที่รับผิดชอบ
-/// (ตอนรวมกับงานเพื่อน ให้ย้าย 2 หน้านี้ไปใส่ใน navigation หลักของแอป)
+/// หน้าเดโมสำหรับสลับดู 2 หน้า (UI อย่างเดียว)
 class DemoShell extends StatefulWidget {
   const DemoShell({super.key});
 
@@ -33,24 +31,15 @@ class DemoShell extends StatefulWidget {
 }
 
 class _DemoShellState extends State<DemoShell> {
-  final _points = PointsController();
   int _index = 0;
 
   @override
-  void dispose() {
-    _points.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final pages = [
-      ReceiptScreen(onViewPoints: () => setState(() => _index = 1)),
-      RewardsScreen(controller: _points),
-    ];
-
     return Scaffold(
-      body: IndexedStack(index: _index, children: pages),
+      body: IndexedStack(
+        index: _index,
+        children: const [ReceiptScreen(), RewardsScreen()],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
