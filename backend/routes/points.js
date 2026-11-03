@@ -4,25 +4,16 @@ const { verifyToken } = require('../auth');
 
 const router = express.Router();
 
-// Users see their own point history; admins may filter by user_id.
+// get point history
 router.get('/', verifyToken, (req, res) => {
-    const requestedUserId = req.query.user_id;
-    const userId = req.user.role === 'admin' && requestedUserId
-        ? requestedUserId
-        : req.user.id;
+    const sql = "SELECT * FROM point_transactions WHERE user_id = ? ORDER BY created_at DESC";
 
-    const sql = `
-        SELECT *
-        FROM point_transactions
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-    `;
-    con.query(sql, [userId], (err, rows) => {
+    con.query(sql, [req.user.id], (err, results) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ message: 'DB error' });
+            return res.status(500).send('DB error');
         }
-        return res.json(rows);
+        return res.json(results);
     });
 });
 
