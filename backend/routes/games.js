@@ -36,7 +36,7 @@ router.get('/:id', (req, res) => {
 // add add new game
 router.post('/', verifyToken, verifyAdmin, (req, res) => {
     const { game_name, category, uid_pattern, requires_server } = req.body;
-    const sql = "INSERT INTO games (game_name, category, uid_pattern, resquires_server, is_active) VALUES (?, ?, ?, ?, 1)";
+    const sql = "INSERT INTO games (game_name, category, uid_pattern, requires_server, is_active) VALUES (?, ?, ?, ?, 1)";
 
     if (!game_name || !category || !uid_pattern || (requires_server !== 0 && requires_server !== 1)) {
         return res.status(400).send('Invalid data');
