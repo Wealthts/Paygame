@@ -12,7 +12,7 @@ router.get('/:order_id', verifyToken, (req, res) => {
         SELECT payments.* 
         FROM payments 
         INNER JOIN orders 
-        ON payment.order_id = orders.order_id 
+        ON payments.order_id = orders.order_id 
         WHERE payments.order_id = ?
     `;
 
@@ -29,6 +29,7 @@ router.get('/:order_id', verifyToken, (req, res) => {
         if (req.user.role !== 'admin' && result[0].user_id !== req.user.id) {
             return res.status(403).send('Access denied');
         }
+        return res.json(result);
     });
 });
 
@@ -113,6 +114,40 @@ router.post('/', verifyToken, (req, res) => {
                     }
                 });
             });
+        });
+    });
+});
+
+// update payment status (admin)
+router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
+    const payment_id = req.params.id;
+    const status = req.body.status;
+    const sql = `
+        UPDATE payments
+        SET status = ?,
+            paid_at = IF
+            (? = 'Paid', CURRENT_TIMESTAMP, NULL)
+        WHERE payment_id = ?
+    `;
+
+    if (status !== 'Paid' && status !== 'Failed') {
+        return res.status(400).send("Invalid payment status");
+    }
+
+    con.query(sql, [status, status, payment_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send("Payment not found");
+        }
+
+        return res.json({
+            message: "Payment status updated successfully",
+            payment_id: payment_id,
+            status: status
         });
     });
 });

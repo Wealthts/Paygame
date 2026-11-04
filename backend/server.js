@@ -8,21 +8,21 @@ app.use(express.json());
 
 // Routes
 const authRoutes = require('./routes/auth');
-const gameRoutes = require('./routes/games');
-const orderRoutes = require('./routes/orders');
-const packageRoutes = require('./routes/packages');
-const paymentRoutes = require('./routes/payments');
-const pointRoutes = require('./routes/points');
-const receiptRoutes = require('./routes/receipts');
+const gamesRoutes = require('./routes/games');
+const ordersRoutes = require('./routes/orders');
+const packagesRoutes = require('./routes/packages');
+const paymentsRoutes = require('./routes/payments');
+const pointsRoutes = require('./routes/points');
+const receiptsRoutes = require('./routes/receipts');
 
 // Use Routes
 app.use('/api', authRoutes);
-app.use('/api/games', gameRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/packages', packageRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/points', pointRoutes);
-app.use('/api/receipts', receiptRoutes);
+app.use('/api/games', gamesRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/packages', packagesRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/points', pointsRoutes);
+app.use('/api/receipts', receiptsRoutes);
 
 // Start Server
 app.listen(3000, () => {
