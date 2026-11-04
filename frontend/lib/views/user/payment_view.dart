@@ -1,4 +1,4 @@
-part of 'paygame_package.dart';
+part of 'game_detail_view.dart';
 
 enum PaygameMethod {
   qr('QR พร้อมเพย์', 'ไม่มีค่าธรรมเนียม', Icons.qr_code_2, 0),
@@ -32,6 +32,7 @@ class PaygameOrder {
     required this.success,
     required this.earnedPoints,
     required this.pointsBalance,
+    required this.createdAt,
   });
   final String id;
   final PaygameGame game;
@@ -42,6 +43,7 @@ class PaygameOrder {
   final int priceSatang, discountSatang, feeSatang;
   final bool success;
   final int earnedPoints, pointsBalance;
+  final DateTime createdAt;
   int get totalSatang => priceSatang - discountSatang + feeSatang;
 }
 
@@ -410,6 +412,7 @@ class _PaygamePaymentState extends State<PaygamePayment> {
         success: success,
         earnedPoints: earned,
         pointsBalance: balance,
+        createdAt: DateTime.now(),
       );
       setState(() {
         _points = balance;

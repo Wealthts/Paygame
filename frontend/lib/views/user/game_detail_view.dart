@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-part 'paygame_payment.dart';
+part 'payment_view.dart';
 
 // Run as a Flutter entry point, or push PaygamePackage from an existing app.
 // All prices, UID rules, points and payments are demo data from gamepay-ui.

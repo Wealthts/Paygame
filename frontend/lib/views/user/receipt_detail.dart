@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
+import 'package:frontend/theme/app_colors.dart';
 
 /// เส้นประแบบใบเสร็จ
 class DashedDivider extends StatelessWidget {

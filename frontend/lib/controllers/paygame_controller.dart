@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:frontend/model/paygame_model.dart';
+import 'package:frontend/models/paygame_models.dart';
 
-class GamePayController extends ChangeNotifier {
+class PaygameController extends ChangeNotifier {
   static const String baseUrl = 'http://localhost:3000';
 
   String? authToken;
