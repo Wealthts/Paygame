@@ -70,7 +70,25 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).send("Game not found or no change");
         }
-        return res.send("Game update successfully")
+        return res.send("Game update successfully");
+    });
+});
+
+// delete game
+router.delete('/:id', verifyToken, verifyAdmin, (req, res) => {
+    const game_id = req.params.id;
+    const sql = "DELETE FROM games WHERE game_id = ?";
+
+    con.query(sql, [game_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send("Game not found or no change");
+        }
+        return res.send("Game deleted successfully");
     });
 });
 
