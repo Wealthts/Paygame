@@ -1,0 +1,843 @@
+{
+  "info": {
+    "_postman_id": "83c1b105-ea2c-45f8-a74f-f143632db274",
+    "name": "Paygame API Test",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "register"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"Natthawat\",\n    \"password\": \"1234\",\n    \"display_name\": \"Test User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "login"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"Natthawat\",\n  \"password\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjY5MTYsImV4cCI6MTc5Mzc2ODcxNn0.a4ZyJHZOYVqDUIh744hCuUPdnwTBXkcn4YVH6zBGoGk",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "view users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/users",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3Njc5NTYsImV4cCI6MTc5Mzc2OTc1Nn0.NR49gN03aZfxspWWCvahVXNLu4-9iVKtEfR0mMR8FfA",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "item": [
+        {
+          "name": "all agmes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/games",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "games"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/games",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "games"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_name\": \"Genshin Impact\",\n  \"category\": \"RPG\",\n  \"uid_pattern\": \"UID_001\",\n  \"requires_server\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2ODM3MzgsImV4cCI6MTc5MzY4NzMzOH0.yC8zzphO27whGWWs0EUvOxLGF1Mx8g-MYmNnAY1Sv7s",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update game",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/games/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "games",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_name\": \"Genshin Impact\",\n  \"category\": \"RPG\",\n  \"uid_pattern\": \"UID_001\",\n  \"requires_server\": 1,\n  \"is_active\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2ODM3MzgsImV4cCI6MTc5MzY4NzMzOH0.yC8zzphO27whGWWs0EUvOxLGF1Mx8g-MYmNnAY1Sv7s",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Packages",
+      "item": [
+        {
+          "name": "all package for test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/packages/test/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "packages",
+                "test",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "all package by game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/packages/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "packages",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "detail package",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/packages/detail/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "packages",
+                "detail",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/packages",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "packages"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": 1,\n  \"package_name\": \"60 Genesis Crystals\",\n  \"price\": 35.00\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2ODgwNzIsImV4cCI6MTc5MzY5MTY3Mn0.fJiiY8pX8KPXkjjw5zkRZCEPnHULJ_YzeOTqh8upnnQ",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update package",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/packages/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "packages",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"package_name\": \"60 Genesis Crystals\",\n    \"price\": 39.00,\n    \"is_active\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2OTU2MDQsImV4cCI6MTc5MzY5NzQwNH0.yqR4abpHREDGPTGqp_Mz0RSpKXYCUkZ4Oykpzus8lZA",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "add order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/orders",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"package_id\": 1,\n  \"player_uid\": \"123456789\",\n  \"server_code\": \"Asia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2OTU2NTksImV4cCI6MTc5MzY5NzQ1OX0.eBkGSZ2qY5COJdtF1kDWx73XTe3N_3wVh-hPa1TH6J0",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "all order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2OTYyNzYsImV4cCI6MTc5MzY5ODA3Nn0.IydcoEP9juf65Clpr-tQasm2b_FtJ31x_qHeBGzTT9w",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "order by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2OTY0MzYsImV4cCI6MTc5MzY5ODIzNn0.enCyIDnJ42gyBcTdcNSc-XwcacjN4_4Nr93wMyWvHV4",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "create payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/payments",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"order_id\": 1,\n    \"method\": \"PromptPay\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NTQ0OTgsImV4cCI6MTc5Mzc1NjI5OH0.8bhWleiaLxsLMeM8gUrGlItE1VJg3BdPu03DvcYdiyE",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "payment by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/payments/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NTQ4MzUsImV4cCI6MTc5Mzc1NjYzNX0.q6KbdhQL8dBWBXfKu5Wo4abWVpzplJvxY4U1E_hFKcQ",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update status",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/payments/1/status",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "1",
+                "status"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"Paid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NTQ5MjMsImV4cCI6MTc5Mzc1NjcyM30.5QE4nZ6JBK-3PqlLRs7z33uAfbjjBvp64HMBhK7b4_Q",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Point_transactions",
+      "item": [
+        {
+          "name": "point balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/points/balance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "points",
+                "balance"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjQ3MDEsImV4cCI6MTc5Mzc2NjUwMX0.LS7v0Jz8pQnAthLjlPrbzhHYeRXLLbVQeVk40ZKNjMc",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "point history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/points/history",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "points",
+                "history"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjQ4MTIsImV4cCI6MTc5Mzc2NjYxMn0.Az8K41OLWKWXvlGVzZdcvrK5L2QBfKBBKypRGKbFfLQ",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add point",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/points/earn",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "points",
+                "earn"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": 1,\n    \"order_id\": 1,\n    \"points\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjQ5MDMsImV4cCI6MTc5Mzc2NjcwM30.GzGyBikqitQIpF9s48d1Z5_3auvUKudXHlABR8WKVh4",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Receipts",
+      "item": [
+        {
+          "name": "create receipt",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/receipts",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "receipts"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"order_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjY5MTYsImV4cCI6MTc5Mzc2ODcxNn0.a4ZyJHZOYVqDUIh744hCuUPdnwTBXkcn4YVH6zBGoGk",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "view receipts by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/receipts/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "receipts",
+                "1"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM3NjY5OTcsImV4cCI6MTc5Mzc2ODc5N30.tz6wKh1HERWlt-Di_OIEmy-Y-vjz7cejSDV22OJHOXQ",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

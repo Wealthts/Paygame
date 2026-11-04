@@ -14,6 +14,7 @@ const packagesRoutes = require('./routes/packages');
 const paymentsRoutes = require('./routes/payments');
 const pointsRoutes = require('./routes/points');
 const receiptsRoutes = require('./routes/receipts');
+const usersRoutes = require('./routes/users');
 
 // Use Routes
 app.use('/api', authRoutes);
@@ -23,6 +24,7 @@ app.use('/api/packages', packagesRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/receipts', receiptsRoutes);
+app.use('/api/users', usersRoutes);
 
 // Start Server
 app.listen(3000, () => {
