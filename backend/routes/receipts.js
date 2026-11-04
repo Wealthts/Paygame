@@ -4,30 +4,117 @@ const { verifyToken } = require('../auth');
 
 const router = express.Router();
 
-// Return the order details, related game/package, and its payment as a receipt.
+// receipt by order id
 router.get('/:order_id', verifyToken, (req, res) => {
+    const order_id = req.params.order_id;
     const sql = `
-        SELECT o.*, u.username, u.display_name,
-               p.package_name, p.points AS package_points,
-               g.game_name,
-               pay.payment_id, pay.payment_method, pay.transaction_ref,
-               pay.status AS payment_status, pay.created_at AS paid_at
-        FROM orders o
-        INNER JOIN users u ON u.user_id = o.user_id
-        LEFT JOIN packages p ON p.package_id = o.package_id
-        LEFT JOIN games g ON g.game_id = p.game_id
-        LEFT JOIN payments pay ON pay.order_id = o.order_id
-        WHERE o.order_id = ? AND (? = 'admin' OR o.user_id = ?)
-        ORDER BY pay.payment_id DESC
-        LIMIT 1
+        SELECT receipts.receipt_id,
+               receipts.order_id,
+               receipts.receipt_number,
+               receipts.issued_at,
+               orders.user_id,
+               orders.game_name_snapshot,
+               orders.package_name_snapshot,
+               orders.total_amount
+        FROM receipts
+        INNER JOIN orders
+        ON receipts.order_id = orders.order_id
+        WHERE receipts.order_id = ?
     `;
-    con.query(sql, [req.params.order_id, req.user.role, req.user.id], (err, rows) => {
+
+    con.query(sql, [order_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).json({ message: 'DB error' });
+            return res.status(500).send("DB server");
         }
-        if (rows.length === 0) return res.status(404).json({ message: 'Receipt not found' });
-        return res.json(rows[0]);
+
+        if (result.length === 0) {
+            return res.status(404).send("Receipt not found");
+        }
+
+        const receipt = result[0];
+
+        if (req.user.role !== 'admin' && receipt.user_id !== req.user.id) {
+            return res.status(403).send("Access denied");
+        }
+
+        return res.json({
+            receipt_id: receipt.receipt_id,
+            order_id: receipt.order_id,
+            receipt_number: receipt.receipt_number,
+            issued_at: receipt.issued_at,
+            game_name: receipt.game_name_snapshot,
+            package_name: receipt.package_name_snapshot,
+            tatal_amount: receipt.tatal_amount
+        });
+    });
+});
+
+// create receipt
+router.post('/', verifyToken, (req, res) => {
+    const { order_id } = req.body;
+    const checkSQL = `
+        SELECT orders.order_id,
+               orders.user_id,
+               orders.total_amount,
+               orders.game_name_snapshot,
+               orders.package_name_snapshot,
+               payments.status AS payment_status
+        FROM orders
+        INNER JOIN payments
+        ON orders.order_id = payments.order_id
+        WHERE orders.order_id = ?
+        AND payments.status = 'Paid'
+    `;
+
+    if (!order_id) {
+        return res.status(400).send('Please provide order_id');
+    }
+
+    con.query(checkSQL, [order_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
+
+        if (result.length === 0) {
+            return res.status(400).send("Payment is not completed");
+        }
+
+        const order = result[0];
+
+        if (req.user.role !== 'admin' && order.user_id !== req.user.id) {
+            return res.status(403).send("Access denied");
+        }
+
+        const receipt_number = 'RCP' + Date.now();
+        const insertSQL = `
+            INSERT INTO receipts
+            (order_id, receipt_number)
+            VALUES (?, ?)
+        `;
+
+        con.query(insertSQL, [order_id, receipt_number], (err, insertResult) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(409).send('Receipt already exists');
+                }
+                console.error(err);
+                return res.status(500).send('Cannot create receipt');
+            }
+
+            return res.status(201).json({
+                message: "Receipt created successfully",
+                receipt: {
+                    receipt_id: insertResult.insertId,
+                    order_id: order.order_id,
+                    receipt_number: receipt_number,
+                    game_name: order.game_name_snapshot,
+                    package_name: order.package_name_snapshot,
+                    total_amount: order.tatal_amount
+                }
+            });
+        });
     });
 });
 
