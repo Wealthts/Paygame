@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:frontend/theme/app_theme.dart';
-import 'package:frontend/views/user/paygame_package.dart';
-import 'package:frontend/views/user/receipt_screen.dart';
-import 'package:frontend/views/user/rewards_screen.dart';
+import 'theme/app_theme.dart';
+import 'views/receipt_screen.dart';
+import 'views/rewards_screen.dart';
 
 void main() {
   runApp(const GamePayApp());
@@ -148,18 +147,7 @@ class _GamePayShellState extends State<GamePayShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: [
-          PaygamePackage(
-            initialPoints: _points,
-            onPaymentCompleted: _handlePaymentCompleted,
-          ),
-          ReceiptScreen(order: _latestOrder),
-          RewardsScreen(
-            points: _points,
-            history: _history,
-            onRedeem: _handleRedeem,
-          ),
-        ],
+        children: const [ReceiptScreen(), RewardsScreen()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -167,11 +155,6 @@ class _GamePayShellState extends State<GamePayShell> {
           setState(() => _index = index);
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.sports_esports_outlined),
-            selectedIcon: Icon(Icons.sports_esports),
-            label: 'เติมเกม',
-          ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
