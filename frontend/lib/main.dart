@@ -1,38 +1,39 @@
 import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart';
-import 'views/user/game_detail_view.dart';
-import 'views/user/history_view.dart';
-import 'views/user/receipt_view.dart';
-import 'views/user/home_view.dart';
+import 'views/user/receipt_screen.dart';
+import 'views/user/rewards_screen.dart';
+import 'user/views/home_view.dart';
+import 'user/views/login.dart';
+import 'user/views/register.dart';
 
 void main() {
-  runApp(const PaygameApp());
+  runApp(const GamePayApp());
 }
 
-class PaygameApp extends StatelessWidget {
-  const PaygameApp({super.key});
+class GamePayApp extends StatelessWidget {
+  const GamePayApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Paygame',
+      title: 'GamePay',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const PaygameShell(),
+      home: const GamePayShell(),
     );
   }
 }
 
 /// หน้าหลักทำหน้าที่เก็บ State กลางและส่งข้อมูลให้แต่ละหน้า
-class PaygameShell extends StatefulWidget {
-  const PaygameShell({super.key});
+class GamePayShell extends StatefulWidget {
+  const GamePayShell({super.key});
 
   @override
-  State<PaygameShell> createState() => _PaygameShellState();
+  State<GamePayShell> createState() => _GamePayShellState();
 }
 
-class _PaygameShellState extends State<PaygameShell> {
+class _GamePayShellState extends State<GamePayShell> {
   int _index = 0;
 
   // แต้มเริ่มต้นสำหรับข้อมูลเดโม สามารถเปลี่ยนเป็น 0 ได้
@@ -149,15 +150,7 @@ class _PaygameShellState extends State<PaygameShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: [
-          const HomeView(),
-          ReceiptScreen(order: _latestOrder),
-          RewardsScreen(
-            points: _points,
-            history: _history,
-            onRedeem: _handleRedeem,
-          ),
-        ],
+        children: const [HomeView(), ReceiptScreen(), RewardsScreen()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
