@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
-import 'paygame_package.dart';
+import 'game_detail_view.dart';
 import 'widgets/dashed_divider.dart';
 
 /// ใบเสร็จจะแสดงข้อมูลจากคำสั่งซื้อล่าสุดที่ชำระเงินสำเร็จ
@@ -137,7 +137,7 @@ class ReceiptScreen extends StatelessWidget {
                         ),
                         _Line(
                           'วันที่',
-                          _dateText(currentOrder.),
+                          _dateText(currentOrder.createdAt),
                         ),
                         _Line('เกม', currentOrder.game.name),
                         _Line(

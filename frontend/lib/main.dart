@@ -1,37 +1,38 @@
 import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart';
-import 'views/receipt_screen.dart';
-import 'views/rewards_screen.dart';
+import 'views/user/game_detail_view.dart';
+import 'views/user/history_view.dart';
+import 'views/user/receipt_view.dart';
 import 'views/user/home_view.dart';
 
 void main() {
-  runApp(const GamePayApp());
+  runApp(const PaygameApp());
 }
 
-class GamePayApp extends StatelessWidget {
-  const GamePayApp({super.key});
+class PaygameApp extends StatelessWidget {
+  const PaygameApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GamePay',
+      title: 'Paygame',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const GamePayShell(),
+      home: const PaygameShell(),
     );
   }
 }
 
 /// หน้าหลักทำหน้าที่เก็บ State กลางและส่งข้อมูลให้แต่ละหน้า
-class GamePayShell extends StatefulWidget {
-  const GamePayShell({super.key});
+class PaygameShell extends StatefulWidget {
+  const PaygameShell({super.key});
 
   @override
-  State<GamePayShell> createState() => _GamePayShellState();
+  State<PaygameShell> createState() => _PaygameShellState();
 }
 
-class _GamePayShellState extends State<GamePayShell> {
+class _PaygameShellState extends State<PaygameShell> {
   int _index = 0;
 
   // แต้มเริ่มต้นสำหรับข้อมูลเดโม สามารถเปลี่ยนเป็น 0 ได้
@@ -148,7 +149,15 @@ class _GamePayShellState extends State<GamePayShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [HomeView(), ReceiptScreen(), RewardsScreen()],
+        children: [
+          const HomeView(),
+          ReceiptScreen(order: _latestOrder),
+          RewardsScreen(
+            points: _points,
+            history: _history,
+            onRedeem: _handleRedeem,
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
