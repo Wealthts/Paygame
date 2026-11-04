@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'views/receipt_screen.dart';
 import 'views/rewards_screen.dart';
+import 'user/views/home_view.dart';
 
 void main() {
   runApp(const GamePayApp());
@@ -38,12 +39,17 @@ class _DemoShellState extends State<DemoShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [ReceiptScreen(), RewardsScreen()],
+        children: const [HomeView(), ReceiptScreen(), RewardsScreen()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'หน้าแรก',
+          ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
