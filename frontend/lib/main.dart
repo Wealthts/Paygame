@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'views/receipt_screen.dart';
 import 'views/rewards_screen.dart';
-import 'user/views/home_view.dart';
+import 'views/user/home_view.dart';
 
 void main() {
   runApp(const GamePayApp());
