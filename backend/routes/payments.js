@@ -1,7 +1,6 @@
 const express = require('express');
 const con = require('../db_config');
 const { verifyToken, verifyAdmin } = require('../auth');
-const { route } = require('./orders');
 
 const router = express.Router();
 
