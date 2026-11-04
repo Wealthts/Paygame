@@ -160,6 +160,7 @@ class _PaygamePackageState extends State<PaygamePackage> {
           initialPoints: _points,
           onPaymentCompleted: (order) {
             if (mounted) setState(() => _points = order.pointsBalance);
+            if (order.success && mounted) Navigator.of(context).pop();
             widget.onPaymentCompleted?.call(order);
           },
         ),

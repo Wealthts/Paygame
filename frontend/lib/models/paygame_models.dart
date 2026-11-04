@@ -17,10 +17,10 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      userId: json['user_id'],
-      username: json['username'],
+      userId: json['user_id'] ?? 0,
+      username: json['username'] ?? '',
       displayName: json['display_name'] ?? '',
-      role: json['role'],
+      role: json['role'] ?? 'user',
       isActive: json['is_active'] == 1,
       createdAt: json['created_at'] ?? '',
     );
@@ -28,38 +28,34 @@ class UserModel {
 }
 
 class GameModel {
-  final int gameId;
+  final String gameId;
   final String gameName;
+  final String shortName;
   final String category;
+  final String unit;
   final String uidPattern;
   final bool requiresServer;
   final bool isActive;
+  final bool isPopular;
 
   GameModel({
     required this.gameId,
     required this.gameName,
+    required this.shortName,
     required this.category,
+    required this.unit,
     required this.uidPattern,
     required this.requiresServer,
     required this.isActive,
+    this.isPopular = false,
   });
-
-  factory GameModel.fromJson(Map<String, dynamic> json) {
-    return GameModel(
-      gameId: json['game_id'],
-      gameName: json['game_name'],
-      category: json['category'],
-      uidPattern: json['uid_pattern'],
-      requiresServer: json['requires_server'] == 1,
-      isActive: json['is_active'] == 1,
-    );
-  }
 }
 
 class PackageModel {
   final int packageId;
-  final int gameId;
+  final String gameId;
   final String packageName;
+  final int quantity;
   final double price;
   final bool isActive;
 
@@ -67,154 +63,70 @@ class PackageModel {
     required this.packageId,
     required this.gameId,
     required this.packageName,
+    required this.quantity,
     required this.price,
     required this.isActive,
   });
-
-  factory PackageModel.fromJson(Map<String, dynamic> json) {
-    return PackageModel(
-      packageId: json['package_id'],
-      gameId: json['game_id'],
-      packageName: json['package_name'],
-      price: double.parse(json['price'].toString()),
-      isActive: json['is_active'] == 1,
-    );
-  }
 }
 
 class OrderModel {
-  final int orderId;
-  final int userId;
-  final int packageId;
+  final String orderId;
+  final String gameName;
+  final String packageName;
   final String playerUid;
-  final String serverCode;
-  final String gameNameSnapshot;
-  final String packageNameSnapshot;
+  final String? serverCode;
   final double originalPrice;
   final double discountAmount;
   final double totalAmount;
+  final String paymentMethod;
   final String status;
-  final String createdAt;
+  final int earnedPoints;
+  final int pointsBalance;
+  final DateTime createdAt;
 
   OrderModel({
     required this.orderId,
-    required this.userId,
-    required this.packageId,
+    required this.gameName,
+    required this.packageName,
     required this.playerUid,
-    required this.serverCode,
-    required this.gameNameSnapshot,
-    required this.packageNameSnapshot,
+    this.serverCode,
     required this.originalPrice,
     required this.discountAmount,
     required this.totalAmount,
+    required this.paymentMethod,
     required this.status,
+    required this.earnedPoints,
+    required this.pointsBalance,
     required this.createdAt,
   });
-
-  factory OrderModel.fromJson(Map<String, dynamic> json) {
-    return OrderModel(
-      orderId: json['order_id'],
-      userId: json['user_id'],
-      packageId: json['package_id'],
-      playerUid: json['player_uid'],
-      serverCode: json['server_code'] ?? '',
-      gameNameSnapshot: json['game_name_snapshot'],
-      packageNameSnapshot: json['package_name_snapshot'],
-      originalPrice: double.parse(json['original_price'].toString()),
-      discountAmount: double.parse(json['discount_amount'].toString()),
-      totalAmount: double.parse(json['total_amount'].toString()),
-      status: json['status'],
-      createdAt: json['created_at'] ?? '',
-    );
-  }
 }
 
-class PaymentModel {
-  final int paymentId;
-  final int orderId;
-  final String transactionRef;
-  final String method;
-  final double amount;
-  final String status;
-  final String createdAt;
-  final String? paidAt;
+class RewardItem {
+  final String id;
+  final String tag;
+  final String name;
+  final int cost;
+  final String description;
 
-  PaymentModel({
-    required this.paymentId,
-    required this.orderId,
-    required this.transactionRef,
-    required this.method,
+  const RewardItem({
+    required this.id,
+    required this.tag,
+    required this.name,
+    required this.cost,
+    this.description = '',
+  });
+}
+
+class RewardHistory {
+  final String title;
+  final String date;
+  final String amount;
+  final bool isEarned;
+
+  const RewardHistory({
+    required this.title,
+    required this.date,
     required this.amount,
-    required this.status,
-    required this.createdAt,
-    this.paidAt,
+    required this.isEarned,
   });
-
-  factory PaymentModel.fromJson(Map<String, dynamic> json) {
-    return PaymentModel(
-      paymentId: json['payment_id'],
-      orderId: json['order_id'],
-      transactionRef: json['transaction_ref'],
-      method: json['method'],
-      amount: double.parse(json['amount'].toString()),
-      status: json['status'],
-      createdAt: json['created_at'] ?? '',
-      paidAt: json['paid_at'],
-    );
-  }
-}
-
-class PointTransactionModel {
-  final int pointTransactionId;
-  final int userId;
-  final int orderId;
-  final String eventKey;
-  final String type;
-  final int pointsDelta;
-  final String createdAt;
-
-  PointTransactionModel({
-    required this.pointTransactionId,
-    required this.userId,
-    required this.orderId,
-    required this.eventKey,
-    required this.type,
-    required this.pointsDelta,
-    required this.createdAt,
-  });
-
-  factory PointTransactionModel.fromJson(Map<String, dynamic> json) {
-    return PointTransactionModel(
-      pointTransactionId: json['point_transaction_id'],
-      userId: json['user_id'],
-      orderId: json['order_id'],
-      eventKey: json['event_key'],
-      type: json['type'],
-      pointsDelta: json['points_delta'],
-      createdAt: json['created_at'] ?? '',
-    );
-  }
-}
-
-class ReceiptModel {
-  final int receiptId;
-  final int orderId;
-  final String receiptNumber;
-  final String issuedAt;
-
-  ReceiptModel({
-    required this.receiptId,
-    required this.orderId,
-    required this.receiptNumber,
-    required this.issuedAt,
-  });
-
-  factory ReceiptModel.fromJson(Map<String, dynamic> json) {
-    return ReceiptModel(
-      receiptId: json['receipt_id'],
-      orderId: json['order_id'],
-      receiptNumber: json['receipt_number'],
-      issuedAt: json['issued_at'] ?? '',
-    );
-  }
 }
