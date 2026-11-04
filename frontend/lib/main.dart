@@ -180,6 +180,21 @@ class _PaygameShellState extends State<PaygameShell> {
             selectedIcon: Icon(Icons.card_giftcard),
             label: 'แลกรางวัล',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.card_giftcard_outlined),
+            selectedIcon: Icon(Icons.card_giftcard),
+            label: 'แลกรางวัล',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.card_giftcard_outlined),
+            selectedIcon: Icon(Icons.card_giftcard),
+            label: 'แลกรางวัล',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.card_giftcard_outlined),
+            selectedIcon: Icon(Icons.card_giftcard),
+            label: 'แลกรางวัล',
+          ),
         ],
       ),
     );
