@@ -154,19 +154,25 @@ class PaygameController extends ChangeNotifier {
 
   List<RewardHistory> pointHistory = [
     const RewardHistory(
-      title: 'Top up ROV · GP-0042',
+      title: 'แต้มเริ่มต้น',
+      date: '',
+      amount: '+2000',
+      isEarned: true,
+    ),
+    const RewardHistory(
+      title: 'เติม ROV · GP-0042',
       date: '29 Oct',
       amount: '+34',
       isEarned: true,
     ),
     const RewardHistory(
-      title: 'Use as a discount · GP-0042',
+      title: 'ใช้แต้มเป็นส่วนลด · GP-0042',
       date: '29 Oct',
       amount: '−100',
       isEarned: false,
     ),
     const RewardHistory(
-      title: 'Top up Genshin · GP-0038',
+      title: 'เติม Genshin · GP-0038',
       date: '25 Oct',
       amount: '+53',
       isEarned: true,
@@ -198,7 +204,7 @@ class PaygameController extends ChangeNotifier {
     pointHistory.insert(
       0,
       RewardHistory(
-        title: 'Top up ${order.gameName} · ${order.orderId}',
+        title: 'เติม ${order.gameName} · ${order.orderId}',
         date: dateStr,
         amount: '+${order.earnedPoints}',
         isEarned: true,
@@ -209,7 +215,7 @@ class PaygameController extends ChangeNotifier {
       pointHistory.insert(
         1,
         RewardHistory(
-          title: 'Use as a discount · ${order.orderId}',
+          title: 'ใช้แต้มเป็นส่วนลด · ${order.orderId}',
           date: dateStr,
           amount: '−100',
           isEarned: false,
@@ -230,7 +236,7 @@ class PaygameController extends ChangeNotifier {
     pointHistory.insert(
       0,
       RewardHistory(
-        title: 'Exchange ${reward.name}',
+        title: 'แลก ${reward.name}',
         date: dateStr,
         amount: '−${reward.cost}',
         isEarned: false,

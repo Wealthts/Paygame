@@ -218,43 +218,23 @@ class RewardsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
-                    children: controller.pointHistory
-                        .map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    Text(
-                                      item.date,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  item.amount,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: item.isEarned
-                                        ? AppColors.success
-                                        : AppColors.danger,
-                                  ),
-                                ),
-                              ],
+                    children: [
+                      for (final item in controller.pointHistory)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(item.title),
+                          subtitle: item.date.isEmpty ? null : Text(item.date),
+                          trailing: Text(
+                            item.amount,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: item.isEarned
+                                  ? AppColors.success
+                                  : AppColors.danger,
                             ),
                           ),
-                        )
-                        .toList(),
+                        ),
+                    ],
                   ),
                 ),
               ]),

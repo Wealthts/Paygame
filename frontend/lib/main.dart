@@ -5,7 +5,7 @@ import 'controllers/paygame_controller.dart';
 import 'models/paygame_models.dart';
 import 'theme/app_theme.dart';
 import 'views/user/home_view.dart';
-import 'views/user/receipt_view.dart';
+import 'views/user/purchase_history_view.dart';
 import 'views/user/history_view.dart';
 import 'views/login.dart';
 import 'views/user/game_detail_view.dart';
@@ -42,7 +42,7 @@ class GamePayShell extends StatefulWidget {
 
 class _GamePayShellState extends State<GamePayShell> {
   int _index = 0;
-  PaygameOrder? _latestOrder;
+  final _orders = <PaygameOrder>[];
 
   void _handlePaymentCompleted(PaygameOrder order) {
     if (!order.success) return;
@@ -66,7 +66,7 @@ class _GamePayShellState extends State<GamePayShell> {
     );
 
     setState(() {
-      _latestOrder = order;
+      _orders.insert(0, order);
       _index = 1;
     });
   }
@@ -79,9 +79,9 @@ class _GamePayShellState extends State<GamePayShell> {
         children: [
           HomeView(
             onPaymentCompleted: _handlePaymentCompleted,
-            initialPoints: context.read<PaygameController>().userPointsBalance,
+            initialPoints: context.watch<PaygameController>().userPointsBalance,
           ),
-          ReceiptScreen(order: _latestOrder),
+          PurchaseHistoryView(orders: _orders),
           const RewardsScreen(),
           const LoginScreen(),
         ],
@@ -100,7 +100,7 @@ class _GamePayShellState extends State<GamePayShell> {
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
-            label: 'ใบเสร็จ',
+            label: 'ประวัติ',
           ),
           NavigationDestination(
             icon: Icon(Icons.card_giftcard_outlined),
