@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'register.dart';
+import 'package:frontend/views/register.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: const Key('login_screen'));
@@ -9,11 +9,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final usernameController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
-
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -64,11 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'เติมเกมไว ได้แต้มคืนทุกครั้ง',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
+                    'Fast game top-ups—get points back every single time.',
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                 ],
               ),
@@ -76,12 +72,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // Form ส่วนล่าง[cite: 1]
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'เข้าสู่ระบบ',
+                    'Log in',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -91,16 +90,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
 
                   // ช่องกรอกชื่อผู้ใช้[cite: 1]
-                  const Text('ชื่อผู้ใช้', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                  const Text(
+                    'Username',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
-                    controller: _usernameController,
+                    controller: usernameController,
                     decoration: InputDecoration(
                       hintText: 'username',
                       hintStyle: const TextStyle(color: Colors.black38),
                       filled: true,
                       fillColor: const Color(0xFFFFFDF5), // สีครีมอ่อน[cite: 1]
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFF3E7D3)),
@@ -114,17 +122,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
 
                   // ช่องกรอกรหัสผ่าน[cite: 1]
-                  const Text('รหัสผ่าน', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                  const Text(
+                    'password',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
-                    controller: _passwordController,
+                    controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: '........',
                       hintStyle: const TextStyle(color: Colors.black38),
                       filled: true,
                       fillColor: const Color(0xFFFFFDF5), // สีครีมอ่อน[cite: 1]
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFF3E7D3)),
@@ -135,14 +152,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  
+
                   // ลืมรหัสผ่าน[cite: 1]
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
                       child: const Text(
-                        'ลืมรหัสผ่าน?',
+                        'Forgot your password?',
                         style: TextStyle(
                           color: Color(0xFFA60C19),
                           decoration: TextDecoration.underline,
@@ -168,8 +185,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         elevation: 0,
                       ),
                       child: const Text(
-                        'เข้าสู่ระบบ',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        'Log in',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -179,16 +200,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('ยังไม่มีบัญชี? ', style: TextStyle(color: Colors.black54)),
+                      const Text(
+                        "Don't have an account yet? ",
+                        style: TextStyle(color: Colors.black54),
+                      ),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
                           );
                         },
                         child: const Text(
-                          'สมัครสมาชิก',
+                          'Sign up',
                           style: TextStyle(
                             color: Color(0xFFA60C19),
                             fontWeight: FontWeight.bold,
@@ -203,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // ข้อความระบุสิทธิ์ Role[cite: 1]
                   const Center(
                     child: Text(
-                      'เข้าสู่ระบบวันนี้: Admin ได้ด้วยบัญชีเดียวกัน (แยกสิทธิ์ด้วย JWT role)',
+                      'Log in today: Access as an Admin using the same account (permissions are distinguished via JWT roles).',
                       style: TextStyle(fontSize: 11, color: Colors.black45),
                       textAlign: TextAlign.center,
                     ),

@@ -11,21 +11,30 @@ class ReceiptScreen extends StatelessWidget {
   final PaygameOrder? order;
 
   String number(int value) => value.toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-        (match) => '${match[1]},',
-      );
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (match) => '${match[1]},',
+  );
 
-  String _money(int satang) {
+  String money(int satang) {
     final whole = satang ~/ 100;
     final decimal = satang % 100;
     return '฿${number(whole)}.${decimal.toString().padLeft(2, '0')}';
   }
 
-  String _dateText(DateTime date) {
+  String dateText(DateTime date) {
     const months = [
-      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-      'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-      'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
     ];
 
     return '${date.day} ${months[date.month - 1]} ${date.year + 543} '
@@ -130,47 +139,30 @@ class ReceiptScreen extends StatelessWidget {
                           ],
                         ),
                         const DashedDivider(),
-                        _Line(
-                          'เลขที่คำสั่งซื้อ',
-                          currentOrder.id,
-                          bold: true,
-                        ),
-                        _Line(
-                          'วันที่',
-                          _dateText(currentOrder.createdAt),
-                        ),
+                        _Line('เลขที่คำสั่งซื้อ', currentOrder.id, bold: true),
+                        _Line('วันที่', dateText(currentOrder.createdAt)),
                         _Line('เกม', currentOrder.game.name),
                         _Line(
                           'แพ็กเกจ',
                           '${number(currentOrder.pack.quantity)} '
                               '${currentOrder.game.unit}',
                         ),
-                        _Line(
-                          'UID',
-                          currentOrder.uid,
-                          bold: true,
-                        ),
+                        _Line('UID', currentOrder.uid, bold: true),
                         if (currentOrder.server != null)
                           _Line('เซิร์ฟเวอร์', currentOrder.server!),
                         _Line('ช่องทาง', currentOrder.method.label),
                         const DashedDivider(),
-                        _Line(
-                          'ราคาแพ็กเกจ',
-                          _money(currentOrder.priceSatang),
-                        ),
+                        _Line('ราคาแพ็กเกจ', money(currentOrder.priceSatang)),
                         _Line(
                           'ส่วนลดจากแต้ม',
-                          '−${_money(currentOrder.discountSatang)}',
+                          '−${money(currentOrder.discountSatang)}',
                           valueColor: AppColors.red,
                         ),
-                        _Line(
-                          'ค่าธรรมเนียม',
-                          _money(currentOrder.feeSatang),
-                        ),
+                        _Line('ค่าธรรมเนียม', money(currentOrder.feeSatang)),
                         const Divider(),
                         _Line(
                           'ยอดชำระ',
-                          _money(currentOrder.totalSatang),
+                          money(currentOrder.totalSatang),
                           bold: true,
                           valueColor: AppColors.red,
                           large: true,
@@ -240,11 +232,7 @@ class _SuccessHeader extends StatelessWidget {
         CircleAvatar(
           radius: 38,
           backgroundColor: AppColors.gold,
-          child: Icon(
-            Icons.check_rounded,
-            size: 42,
-            color: AppColors.redDark,
-          ),
+          child: Icon(Icons.check_rounded, size: 42, color: AppColors.redDark),
         ),
         SizedBox(height: 12),
         Text(
@@ -258,10 +246,7 @@ class _SuccessHeader extends StatelessWidget {
         SizedBox(height: 4),
         Text(
           'บันทึกข้อมูลคำสั่งซื้อเรียบร้อยแล้ว',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.peach,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.peach),
         ),
       ],
     );
@@ -296,9 +281,7 @@ class _Line extends StatelessWidget {
               style: TextStyle(
                 fontSize: large ? 16 : 14,
                 color: AppColors.inkMuted,
-                fontWeight: large
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+                fontWeight: large ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ),
@@ -309,9 +292,7 @@ class _Line extends StatelessWidget {
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: large ? 18 : 14,
-                fontWeight: bold
-                    ? FontWeight.w700
-                    : FontWeight.w400,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
                 color: valueColor ?? AppColors.ink,
               ),
             ),

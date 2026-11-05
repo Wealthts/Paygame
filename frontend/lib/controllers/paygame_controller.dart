@@ -5,7 +5,7 @@ class PaygameController extends ChangeNotifier {
   String? authToken;
   String currentRole = 'user';
   String currentUsername = 'Natthawat';
-  int userPointsBalance = 1184;
+  int userPointsBalance = 2000;
 
   OrderModel? latestOrder;
 
@@ -154,26 +154,26 @@ class PaygameController extends ChangeNotifier {
 
   List<RewardHistory> pointHistory = [
     const RewardHistory(
-      title: 'เติม ROV · GP-0042',
-      date: '29 ต.ค.',
+      title: 'Top up ROV · GP-0042',
+      date: '29 Oct',
       amount: '+34',
       isEarned: true,
     ),
     const RewardHistory(
-      title: 'ใช้เป็นส่วนลด · GP-0042',
-      date: '29 ต.ค.',
+      title: 'Use as a discount · GP-0042',
+      date: '29 Oct',
       amount: '−100',
       isEarned: false,
     ),
     const RewardHistory(
-      title: 'เติม Genshin · GP-0038',
-      date: '25 ต.ค.',
+      title: 'Top up Genshin · GP-0038',
+      date: '25 Oct',
       amount: '+53',
       isEarned: true,
     ),
     const RewardHistory(
-      title: 'โบนัสสมัครสมาชิก',
-      date: '15 ก.ย.',
+      title: 'Sign-up Bonus',
+      date: '15 Sep',
       amount: '+50',
       isEarned: true,
     ),
@@ -198,7 +198,7 @@ class PaygameController extends ChangeNotifier {
     pointHistory.insert(
       0,
       RewardHistory(
-        title: 'เติม ${order.gameName} · ${order.orderId}',
+        title: 'Top up ${order.gameName} · ${order.orderId}',
         date: dateStr,
         amount: '+${order.earnedPoints}',
         isEarned: true,
@@ -209,7 +209,7 @@ class PaygameController extends ChangeNotifier {
       pointHistory.insert(
         1,
         RewardHistory(
-          title: 'ใช้แต้มเป็นส่วนลด · ${order.orderId}',
+          title: 'Use as a discount · ${order.orderId}',
           date: dateStr,
           amount: '−100',
           isEarned: false,
@@ -230,7 +230,7 @@ class PaygameController extends ChangeNotifier {
     pointHistory.insert(
       0,
       RewardHistory(
-        title: 'แลก ${reward.name}',
+        title: 'Exchange ${reward.name}',
         date: dateStr,
         amount: '−${reward.cost}',
         isEarned: false,

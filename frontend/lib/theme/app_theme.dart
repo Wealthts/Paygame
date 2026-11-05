@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
+import 'package:frontend/theme/app_colors.dart';
 
 class AppTheme {
   AppTheme._();
@@ -19,10 +19,9 @@ class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: GoogleFonts.promptTextTheme(base.textTheme).apply(
-        bodyColor: AppColors.ink,
-        displayColor: AppColors.ink,
-      ),
+      textTheme: GoogleFonts.promptTextTheme(
+        base.textTheme,
+      ).apply(bodyColor: AppColors.ink, displayColor: AppColors.ink),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.red,
         foregroundColor: AppColors.white,
@@ -33,8 +32,13 @@ class AppTheme {
           backgroundColor: AppColors.red,
           foregroundColor: AppColors.white,
           minimumSize: const Size(44, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.prompt(fontWeight: FontWeight.w600, fontSize: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.prompt(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -43,17 +47,25 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => GoogleFonts.prompt(
             fontSize: 12,
-            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w400,
-            color: states.contains(WidgetState.selected) ? AppColors.red : AppColors.inkMuted,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w400,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.red
+                : AppColors.inkMuted,
           ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
-            color: states.contains(WidgetState.selected) ? AppColors.red : AppColors.inkMuted,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.red
+                : AppColors.inkMuted,
           ),
         ),
       ),
-      snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }
