@@ -83,10 +83,6 @@ router.post('/', verifyToken, (req, res) => {
 
         const order = result[0];
 
-        if (req.user.role !== 'admin' && order.user_id !== req.user.id) {
-            return res.status(403).send("Access denied");
-        }
-
         const receipt_number = 'RCP' + Date.now();
         const insertSQL = `
             INSERT INTO receipts

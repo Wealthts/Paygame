@@ -24,10 +24,6 @@ router.get('/:order_id', verifyToken, (req, res) => {
         if (result.length === 0) {
             return res.status(404).send("Payment not found");
         }
-
-        if (req.user.role !== 'admin' && result[0].user_id !== req.user.id) {
-            return res.status(403).send('Access denied');
-        }
         return res.json(result);
     });
 });

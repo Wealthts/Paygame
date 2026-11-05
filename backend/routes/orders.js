@@ -26,7 +26,7 @@ router.get('/', verifyToken, verifyAdmin, (req, res) => {
 });
 
 // get order detail
-router.get('/:id', verifyToken, verifyAdmin, (req, res) => {
+router.get('/:id', verifyToken, (req, res) => {
     const id = req.params.id;
     const user_id = req.user.id;
     let values = [id];
