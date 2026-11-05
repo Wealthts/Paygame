@@ -1,3 +1,5 @@
+// this file for study
+
 /*
  * PAYMENTS, POINTS, AND RECEIPTS: COMMENTED WALKTHROUGH
  *
@@ -22,10 +24,10 @@
 const express = require('express');
 
 // This is the MySQL connection shared by the backend routes.
-const con = require('./db_config');
+const con = require('../db_config');
 
 // Middleware verifies a JWT and puts its decoded user data on req.user.
-const { verifyToken } = require('./auth');
+const { verifyToken } = require('../auth');
 
 // Separate routers keep endpoints grouped by feature.
 const paymentsRouter = express.Router();
