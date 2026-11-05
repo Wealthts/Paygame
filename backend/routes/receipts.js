@@ -103,16 +103,34 @@ router.post('/', verifyToken, (req, res) => {
                 return res.status(500).send('Cannot create receipt');
             }
 
-            return res.status(201).json({
-                message: "Receipt created successfully",
-                receipt: {
-                    receipt_id: insertResult.insertId,
-                    order_id: order.order_id,
-                    receipt_number: receipt_number,
-                    game_name: order.game_name_snapshot,
-                    package_name: order.package_name_snapshot,
-                    total_amount: order.tatal_amount
+            const updateSQL = `
+                UPDATE orders 
+                SET status = 'Completed', completed_at = CURRENT_TIMESTAMP 
+                WHERE order_id = ?
+            `;
+
+            con.query(updateSQL, [order_id], (err, updateResult) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("DB error");
                 }
+
+                if (updateResult.affectedRows === 0) {
+                    return res.status(404).send("Order not found or status not changed");
+                }
+
+                return res.status(201).json({
+                    message: "Receipt created successfully",
+                    receipt: {
+                        receipt_id: insertResult.insertId,
+                        order_id: order.order_id,
+                        receipt_number: receipt_number,
+                        game_name: order.game_name_snapshot,
+                        package_name: order.package_name_snapshot,
+                        total_amount: order.total_amount,
+                        order_status: "Completed"
+                    }
+                });
             });
         });
     });
