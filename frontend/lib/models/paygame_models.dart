@@ -49,6 +49,32 @@ class GameModel {
     required this.isActive,
     this.isPopular = false,
   });
+
+  // Convert JSON to GameModel
+  factory GameModel.fromJson(Map<String, dynamic> json) {
+    return GameModel(
+      gameId: json['game_id'].toString(),
+      gameName: json['game_name'] ?? '',
+      shortName: json['game_name'] ?? '',
+      category: json['category'] ?? '',
+      unit: '',
+      uidPattern: json['uid_pattern'] ?? '',
+      requiresServer: _readBool(json['requires_server']),
+      isActive: _readBool(json['is_active']),
+      isPopular: false,
+    );
+  }
+
+  // Convert GameModel to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'game_name': gameName,
+      'category': category,
+      'uid_pattern': uidPattern,
+      'requires_server': requiresServer ? 1 : 0,
+      'is_active': isActive ? 1 : 0,
+    };
+  }
 }
 
 class PackageModel {
@@ -129,4 +155,13 @@ class RewardHistory {
     required this.amount,
     required this.isEarned,
   });
+}
+
+// Convert database boolean values
+bool _readBool(dynamic value) {
+  if (value == true || value == 1 || value == '1') {
+    return true;
+  }
+
+  return false;
 }

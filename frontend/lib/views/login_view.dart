@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/register_view.dart';
 import 'package:frontend/views/forget_view.dart';
+import 'package:frontend/views/admin/admin_shell_view.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key ?? const Key('login_screen'));
