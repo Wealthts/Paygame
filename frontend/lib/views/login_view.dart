@@ -1,49 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/register.dart';
+import 'package:frontend/views/register_view.dart';
+import 'package:frontend/views/forget_view.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: const Key('login_screen'));
+  const LoginScreen({Key? key}) : super(key: key ?? const Key('login_screen'));
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool obscurePassword = true;
 
-  // ระยะห่างมาตรฐาน ใช้ซ้ำทั้งหน้า
-  static const double _s8 = 8;
-  static const double _s16 = 16;
-  static const double _s24 = 24;
+  static const double s8 = 8;
+  static const double s16 = 16;
+  static const double s24 = 24;
 
-  static const Color _red = Color(0xFFA60C19);
-  static const Color _gold = Color(0xFFD4AF37);
+  static const Color red = Color(0xFFA60C19);
+  static const Color gold = Color(0xFFD4AF37);
 
   @override
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
+
     super.dispose();
   }
 
+  // Main Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // ให้ body ย่อตามคีย์บอร์ดเอง เลื่อนได้ และไม่ overflow
       body: CustomScrollView(
         slivers: [
           SliverFillRemaining(
             hasScrollBody: false,
             child: Column(
               children: [
-                _buildHeader(context),
-                _buildForm(context),
-                // ดันข้อความท้ายหน้าไปชิดล่างเมื่อหน้าจอสูง
+                buildHeader(context),
+                buildForm(context),
                 const Spacer(),
-                _buildFooterNote(),
+                buildFooterNote(),
               ],
             ),
           ),
@@ -52,24 +52,24 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ---------- Header ----------
-  Widget _buildHeader(BuildContext context) {
-    // ใช้ safe area จริงของเครื่อง แทนการ hardcode 60
+  // Header
+  Widget buildHeader(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
 
     return Container(
       width: double.infinity,
+      padding: EdgeInsets.fromLTRB(s24, topInset + s24, s24, s24 + 4),
       decoration: const BoxDecoration(
-        color: _red,
+        color: red,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
-        border: Border(bottom: BorderSide(color: _gold, width: 4.0)),
+        border: Border(bottom: BorderSide(color: gold, width: 4.0)),
       ),
-      padding: EdgeInsets.fromLTRB(_s24, topInset + _s24, _s24, _s24 + 4),
       child: Column(
         children: [
+          // GamePay Logo
           Container(
             width: 70,
             height: 70,
@@ -77,9 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
               color: const Color(0xFFD4A017),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(Icons.sports_esports, size: 40, color: _red),
+            child: const Icon(Icons.sports_esports, size: 40, color: red),
           ),
+
           const SizedBox(height: 12),
+
+          // App Name
           const Text(
             'GamePay',
             style: TextStyle(
@@ -88,9 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Colors.white,
             ),
           ),
+
           const SizedBox(height: 4),
+
+          // Description
           const Text(
-            'เติมเกมรวดเร็ว รับแต้มคืนทุกครั้งที่เติม',
+            'Top up your games quickly and earn points back with every transaction.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4),
           ),
@@ -99,73 +105,96 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ---------- Form ----------
-  Widget _buildForm(BuildContext context) {
+  // ============================================================
+  // Login Form
+  // ============================================================
+  Widget buildForm(BuildContext context) {
     return Center(
-      // จำกัดความกว้างเผื่อใช้บนแท็บเล็ต/เว็บ
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(_s24, _s24, _s24, 0),
+          padding: const EdgeInsets.fromLTRB(s24, s24, s24, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Form Title
               const Text(
-                'เข้าสู่ระบบ',
+                'Log in',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
-              const SizedBox(height: _s24),
 
-              _buildLabel('ชื่อผู้ใช้'),
-              const SizedBox(height: _s8),
-              _buildTextField(
+              const SizedBox(height: s24),
+
+              // Username
+              buildLabel('Username'),
+
+              const SizedBox(height: s8),
+
+              buildTextField(
                 controller: usernameController,
-                hint: 'ชื่อผู้ใช้',
+                hint: 'username',
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: _s16),
 
-              _buildLabel('รหัสผ่าน'),
-              const SizedBox(height: _s8),
-              _buildTextField(
+              const SizedBox(height: s16),
+
+              // Password
+              buildLabel('Password'),
+
+              const SizedBox(height: s8),
+
+              buildTextField(
                 controller: passwordController,
                 hint: '........',
                 isPassword: true,
-                obscure: _obscurePassword,
-                onToggleObscure: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
+                obscure: obscurePassword,
+                onToggleObscure: () {
+                  setState(() {
+                    obscurePassword = !obscurePassword;
+                  });
+                },
                 textInputAction: TextInputAction.done,
               ),
-              const SizedBox(height: _s16),
 
-              // ลืมรหัสผ่าน: เว้นระยะด้านบน-ล่างให้สบายตา และกดง่ายขึ้น
+              const SizedBox(height: s16),
+
+              // Forgot Password
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgetScreen(),
+                      ),
+                    );
+                  },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: _s8,
-                      vertical: _s8,
+                      horizontal: s8,
+                      vertical: s8,
                     ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: const Text(
-                    'ลืมรหัสผ่าน?',
+                    'Forgot password?',
                     style: TextStyle(
-                      color: _red,
+                      color: red,
                       decoration: TextDecoration.underline,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: _s24),
 
+              const SizedBox(height: s24),
+
+              // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -174,14 +203,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     // TODO: Implement Login Logic
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _red,
+                    backgroundColor: red,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
                   child: const Text(
-                    'เข้าสู่ระบบ',
+                    'Log in',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -190,39 +219,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: _s16),
 
-              // ใช้ Wrap เผื่อข้อความยาวจนตกบรรทัด
-              Center(
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    const Text(
-                      'ยังไม่มีบัญชี? ',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'สมัครสมาชิก',
-                        style: TextStyle(
-                          color: _red,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: s16),
+
+              // Register Link
+              buildRegisterLink(context),
             ],
           ),
         ),
@@ -230,14 +231,47 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ---------- Footer ----------
-  Widget _buildFooterNote() {
+  // Register Link
+  Widget buildRegisterLink(BuildContext context) {
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Text(
+            "Don't have an account yet? ",
+            style: TextStyle(color: Colors.black54),
+          ),
+
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+              );
+            },
+            child: const Text(
+              'Sign up',
+              style: TextStyle(
+                color: red,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Footer
+  Widget buildFooterNote() {
     return SafeArea(
       top: false,
       child: const Padding(
-        padding: EdgeInsets.fromLTRB(_s24, _s24, _s24, _s16),
+        padding: EdgeInsets.fromLTRB(s24, s24, s24, s16),
         child: Text(
-          'เข้าสู่ระบบวันนี้: ผู้ดูแลระบบ (Admin) สามารถใช้บัญชีเดียวกันในการเข้าถึงได้ (แยกสิทธิ์ผ่าน JWT roles)',
+          'ผู้ดูแลระบบ (Admin) สามารถใช้บัญชีเดียวกันในการเข้าถึงได้ (แยกสิทธิ์ผ่าน JWT roles)',
           style: TextStyle(fontSize: 11, color: Colors.black45, height: 1.4),
           textAlign: TextAlign.center,
         ),
@@ -245,8 +279,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ---------- Reusable widgets ----------
-  Widget _buildLabel(String text) {
+  // Reusable Label
+  Widget buildLabel(String text) {
     return Text(
       text,
       style: const TextStyle(
@@ -256,7 +290,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField({
+  // Reusable Text Field
+  Widget buildTextField({
     required TextEditingController controller,
     required String hint,
     bool isPassword = false,
@@ -273,10 +308,14 @@ class _LoginScreenState extends State<LoginScreen> {
         hintStyle: const TextStyle(color: Colors.black38),
         filled: true,
         fillColor: const Color(0xFFFFFDF5),
+
+        // Input Padding
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
+
+        // Show / Hide Password
         suffixIcon: isPassword
             ? IconButton(
                 onPressed: onToggleObscure,
@@ -289,13 +328,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               )
             : null,
+
+        // Default Border
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFF3E7D3)),
         ),
+
+        // Focus Border
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _red),
+          borderSide: const BorderSide(color: red),
         ),
       ),
     );

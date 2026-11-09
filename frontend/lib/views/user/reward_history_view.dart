@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/controllers/paygame_controller.dart';
 import 'package:frontend/models/paygame_models.dart';
 import 'package:provider/provider.dart';
-import '../../theme/app_colors.dart';
+import 'package:frontend/theme/app_colors.dart';
 
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({super.key});

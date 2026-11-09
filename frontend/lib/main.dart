@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'controllers/paygame_controller.dart';
-import 'models/paygame_models.dart';
-import 'theme/app_theme.dart';
-import 'views/user/home_view.dart';
-import 'views/user/purchase_history_view.dart';
-import 'views/user/history_view.dart';
-import 'views/login.dart';
-import 'views/user/game_detail_view.dart';
+import 'package:frontend/controllers/paygame_controller.dart';
+import 'package:frontend/models/paygame_models.dart';
+
+import 'package:frontend/theme/app_theme.dart';
+
+import 'package:frontend/views/login_view.dart';
+import 'package:frontend/views/user/home_view.dart';
+import 'package:frontend/views/user/purchase_history_view.dart';
+import 'package:frontend/views/user/reward_history_view.dart';
+import 'package:frontend/views/user/game_detail_view.dart';
 
 void main() {
   runApp(
@@ -35,85 +37,114 @@ class GamePayApp extends StatelessWidget {
 
 class GamePayShell extends StatefulWidget {
   const GamePayShell({super.key});
-
   @override
   State<GamePayShell> createState() => _GamePayShellState();
 }
 
 class _GamePayShellState extends State<GamePayShell> {
-  int _index = 0;
-  final _orders = <PaygameOrder>[];
+  int currentIndex = 0;
+  final List<PaygameOrder> orders = [];
 
-  void _handlePaymentCompleted(PaygameOrder order) {
+  void handlePaymentCompleted(PaygameOrder order) {
+    // Stop if payment was unsuccessful.
     if (!order.success) return;
 
-    context.read<PaygameController>().addOrder(
-      OrderModel(
-        orderId: order.id,
-        gameName: order.game.name,
-        packageName: '${order.pack.quantity} ${order.game.unit}',
-        playerUid: order.uid,
-        serverCode: order.server,
-        originalPrice: order.priceSatang / 100,
-        discountAmount: order.discountSatang / 100,
-        totalAmount: order.totalSatang / 100,
-        paymentMethod: order.method.label,
-        status: 'completed',
-        earnedPoints: order.earnedPoints,
-        pointsBalance: order.pointsBalance,
-        createdAt: order.createdAt,
-      ),
+    // Convert payment data into the history model.
+    final orderModel = OrderModel(
+      orderId: order.id,
+      gameName: order.game.name,
+      packageName: '${order.pack.quantity} ${order.game.unit}',
+      playerUid: order.uid,
+      serverCode: order.server,
+      originalPrice: order.priceSatang / 100,
+      discountAmount: order.discountSatang / 100,
+      totalAmount: order.totalSatang / 100,
+      paymentMethod: order.method.label,
+      status: 'completed',
+      earnedPoints: order.earnedPoints,
+      pointsBalance: order.pointsBalance,
+      createdAt: order.createdAt,
     );
 
+    // Save the completed order.
+    context.read<PaygameController>().addOrder(orderModel);
+
+    // Update local order history and navigate to history.
     setState(() {
-      _orders.insert(0, order);
-      _index = 1;
+      orders.insert(0, order);
+      currentIndex = 1;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final userPoints = context.watch<PaygameController>().userPointsBalance;
+
     return Scaffold(
+      // Main page content.
       body: IndexedStack(
-        index: _index,
+        index: currentIndex,
         children: [
+          // Home Page
           HomeView(
-            onPaymentCompleted: _handlePaymentCompleted,
-            initialPoints: context.watch<PaygameController>().userPointsBalance,
+            onPaymentCompleted: handlePaymentCompleted,
+            initialPoints: userPoints,
           ),
-          PurchaseHistoryView(orders: _orders),
+
+          // Purchase History
+          PurchaseHistoryView(orders: orders),
+
+          // Reward History
           const RewardsScreen(),
+
+          // Login Page
           const LoginScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (index) {
-          setState(() => _index = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'หน้าแรก',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'ประวัติ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.card_giftcard_outlined),
-            selectedIcon: Icon(Icons.card_giftcard),
-            label: 'แลกรางวัล',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'เข้าสู่ระบบ',
-          ),
-        ],
-      ),
+
+      // Bottom Navigation.
+      bottomNavigationBar: buildNavigationBar(),
+    );
+  }
+
+  // Navigation bar builder.
+  Widget buildNavigationBar() {
+    return NavigationBar(
+      selectedIndex: currentIndex,
+
+      // Change the selected page.
+      onDestinationSelected: (destinationIndex) {
+        setState(() {
+          currentIndex = destinationIndex;
+        });
+      },
+
+      // Navigation destinations.
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+
+        NavigationDestination(
+          icon: Icon(Icons.receipt_long_outlined),
+          selectedIcon: Icon(Icons.receipt_long),
+          label: 'History',
+        ),
+
+        NavigationDestination(
+          icon: Icon(Icons.card_giftcard_outlined),
+          selectedIcon: Icon(Icons.card_giftcard),
+          label: 'Rewards',
+        ),
+
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Login',
+        ),
+      ],
     );
   }
 }
