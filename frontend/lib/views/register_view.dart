@@ -181,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: s16),
 
               // Password
-              _buildInputField(
+              buildInputField(
                 label: 'password',
                 hintText: 'at least 8 characters',
                 controller: passwordController,
