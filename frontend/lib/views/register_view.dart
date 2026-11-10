@@ -12,9 +12,8 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   // Variables
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController(); // เพิ่ม emailController[cite: 6]
-  final TextEditingController passwordController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController displayNameController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
