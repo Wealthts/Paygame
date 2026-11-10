@@ -1,12 +1,12 @@
-const express = require('express');
-const con = require('../db_config');
-const { verifyToken, verifyAdmin } = require('../middleware/auth');
+const express = require("express");
+const con = require("../db_config");
+const { verifyToken, verifyAdmin } = require("../middleware/auth");
 
 const router = express.Router();
 
 // GET: test packages by game_id
 // GET /api/packages/test/:game_id
-router.get('/test/:game_id', (req, res) => {
+router.get("/test/:game_id", (req, res) => {
     const game_id = req.params.game_id;
     const sql = "SELECT * FROM packages WHERE game_id = ?";
 
@@ -21,9 +21,10 @@ router.get('/test/:game_id', (req, res) => {
 
 // GET: all packages for admin
 // GET api/package/:game_id
-router.get('/:game_id', verifyToken, verifyAdmin, (req, res) => {
+router.get("/:game_id", verifyToken, verifyAdmin, (req, res) => {
     const game_id = req.params.game_id;
-    const sql = "SELECT * FROM packages WHERE game_id = ? ORDER BY package_id DESC";
+    const sql =
+        "SELECT * FROM packages WHERE game_id = ? ORDER BY package_id DESC";
 
     con.query(sql, [game_id], (err, result) => {
         if (err) {
@@ -36,7 +37,7 @@ router.get('/:game_id', verifyToken, verifyAdmin, (req, res) => {
 
 // GET: active packages by game_id
 // GET: /api/packages/:game_id
-router.get('/:game_id', (req, res) => {
+router.get("/:game_id", (req, res) => {
     const game_id = req.params.game_id;
     const sql = `
         SELECT *
@@ -58,7 +59,7 @@ router.get('/:game_id', (req, res) => {
 
 // GET: package detail
 // GET: api/packages/detail/:package_id
-router.get('/detail/:package_id', (req, res) => {
+router.get("/detail/:package_id", (req, res) => {
     const id = req.params.package_id;
     const sql = "SELECT * FROM packages WHERE package_id = ? AND is_active = 1";
 
@@ -77,7 +78,7 @@ router.get('/detail/:package_id', (req, res) => {
 
 // POST: add package
 // POST api/packages
-router.post('/', verifyToken, verifyAdmin, (req, res) => {
+router.post("/", verifyToken, verifyAdmin, (req, res) => {
     const { game_id, package_name, price } = req.body;
     const sql = `
         INSERT INTO packages
@@ -87,11 +88,11 @@ router.post('/', verifyToken, verifyAdmin, (req, res) => {
 
     if (
         game_id === undefined ||
-        package_name === undefined ||
+        typeof package_name !== 'string' ||
+        package_name.trim() === '' ||
         price === undefined ||
         price === null ||
-        package_name.toString().trim() === '' ||
-        price === ''
+        price === ""
     ) {
         return res.status(400).send("Invalid data");
     }
@@ -115,25 +116,25 @@ router.post('/', verifyToken, verifyAdmin, (req, res) => {
         }
         return res.json({
             message: "Package added successfully",
-            package_id: result.insertId
-        })
+            package_id: result.insertId,
+        });
     });
 });
 
 // PUT: update package
 // PUT api/packages/:id
-router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
+router.put("/:id", verifyToken, verifyAdmin, (req, res) => {
     const id = Number(req.params.id);
     const { package_name, price, is_active } = req.body;
 
     if (
         !Number.isInteger(id) ||
         id <= 0 ||
-        typeof package_name !== 'string' ||
-        package_name.trim() === '' ||
+        typeof package_name !== "string" ||
+        package_name.trim() === "" ||
         price === undefined ||
         price === null ||
-        price === '' ||
+        price === "" ||
         (Number(is_active) !== 0 && Number(is_active) !== 1)
     ) {
         return res.status(400).send("Invalid data");
@@ -141,10 +142,7 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
 
     const packagePrice = Number(price);
 
-    if (
-        !Number.isFinite(packagePrice) ||
-        packagePrice <= 0
-    ) {
+    if (!Number.isFinite(packagePrice) || packagePrice <= 0) {
         return res.status(400).send("Invalid price");
     }
 
@@ -158,12 +156,7 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
 
     con.query(
         sql,
-        [
-            package_name.trim(),
-            packagePrice,
-            Number(is_active),
-            id
-        ],
+        [package_name.trim(), packagePrice, Number(is_active), id],
         (err, result) => {
             if (err) {
                 console.error(err);
@@ -185,23 +178,22 @@ router.put('/:id', verifyToken, verifyAdmin, (req, res) => {
                         }
 
                         return res.json({
-                            message: "Package unchanged"
+                            message: "Package unchanged",
                         });
-                    }
+                    },
                 );
             }
 
             return res.json({
-                message: "Package updated successfully"
+                message: "Package updated successfully",
             });
-        }
+        },
     );
 });
 
-
 // DELETE: soft delete package
 // DELETE api/packages/:id
-router.delete('/:id', verifyToken, verifyAdmin, (req, res) => {
+router.delete("/:id", verifyToken, verifyAdmin, (req, res) => {
     const id = Number(req.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -235,17 +227,16 @@ router.delete('/:id', verifyToken, verifyAdmin, (req, res) => {
                     }
 
                     return res.json({
-                        message: "Package already inactive"
+                        message: "Package already inactive",
                     });
-                }
+                },
             );
         }
 
         return res.json({
-            message: "Package deactivated successfully"
+            message: "Package deactivated successfully",
         });
     });
 });
-
 
 module.exports = router;

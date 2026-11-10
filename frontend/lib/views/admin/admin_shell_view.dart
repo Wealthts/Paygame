@@ -105,7 +105,7 @@ class _AdminShellViewState extends State<AdminShellView> {
                     onDestinationSelected: changePage,
                     extended: constraints.maxWidth >= 1200,
                     backgroundColor: Colors.white,
-                    indicatorColor: primaryColor.withOpacity(0.10),
+                    indicatorColor: primaryColor.withValues(alpha: 0.10),
                     selectedIconTheme: const IconThemeData(color: primaryColor),
                     unselectedIconTheme: const IconThemeData(
                       color: Colors.grey,
@@ -171,7 +171,7 @@ class _AdminShellViewState extends State<AdminShellView> {
           bottomNavigationBar: NavigationBar(
             selectedIndex: currentIndex,
             onDestinationSelected: changePage,
-            indicatorColor: primaryColor.withOpacity(0.10),
+            indicatorColor: primaryColor.withValues(alpha: 0.10),
             destinations: destinations,
           ),
         );

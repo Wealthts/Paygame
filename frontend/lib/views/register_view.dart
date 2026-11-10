@@ -12,8 +12,8 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   // Variables
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController displayNameController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -45,6 +45,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose();
+    displayNameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -179,6 +181,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: s16),
 
+              buildInputField(
+                label: 'Display Name',
+                hintText: 'Your display name',
+                controller: displayNameController,
+                textInputAction: TextInputAction.next,
+              ),
+
+              const SizedBox(height: s16),
+
+              // Email
+              buildInputField(
+                label: 'Email',
+                hintText: 'example@email.com',
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+
               // Password
               buildInputField(
                 label: 'password',
@@ -249,7 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         )
                       : const Text(
-                          'Sign Up',
+                          "Sign Up",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
