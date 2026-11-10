@@ -10,7 +10,15 @@ const JWT_KEY = 'paygame_secret_key';
 // POST /api/register
 router.post('/register', async (req, res) => {
     try {
+        console.log('========== REGISTER DEBUG ==========');
+        console.log('Content-Type:', req.headers['content-type']);
+        console.log('Request Body:', JSON.stringify(req.body, null, 2));
         const { username, password, email, display_name } = req.body;
+
+        console.log('Username:', username);
+        console.log('Password:', password ? 'Received' : 'Missing');
+        console.log('Email:', email);
+        console.log('Display Name:', display_name);
 
         // Validate input
         if (
@@ -19,6 +27,7 @@ router.post('/register', async (req, res) => {
             !email ||
             !display_name
         ) {
+            console.log('Register Request:', req.body);
             return res.status(400).json({
                 message: "Please fill in all required fields"
             });

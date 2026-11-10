@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/user/game_detail_view.dart';
 import 'package:provider/provider.dart';
 
 import 'package:frontend/controllers/paygame_controller.dart';
 import 'package:frontend/models/paygame_models.dart';
-
 import 'package:frontend/theme/app_theme.dart';
 
 import 'package:frontend/views/login_view.dart';
+import 'package:frontend/views/admin/admin_shell_view.dart';
 import 'package:frontend/views/user/paygame_shell_view.dart';
 import 'package:frontend/views/user/purchase_history_view.dart';
 import 'package:frontend/views/user/reward_history_view.dart';
-import 'package:frontend/views/user/game_detail_view.dart';
 
 void main() {
   runApp(
@@ -37,6 +37,7 @@ class GamePayApp extends StatelessWidget {
 
 class GamePayShell extends StatefulWidget {
   const GamePayShell({super.key});
+
   @override
   State<GamePayShell> createState() => _GamePayShellState();
 }
@@ -46,10 +47,8 @@ class _GamePayShellState extends State<GamePayShell> {
   final List<PaygameOrder> orders = [];
 
   void handlePaymentCompleted(PaygameOrder order) {
-    // Stop if payment was unsuccessful.
     if (!order.success) return;
 
-    // Convert payment data into the history model.
     final orderModel = OrderModel(
       orderId: order.id,
       gameName: order.game.name,
@@ -66,91 +65,182 @@ class _GamePayShellState extends State<GamePayShell> {
       createdAt: order.createdAt,
     );
 
-    // Save the completed order.
     context.read<PaygameController>().addOrder(orderModel);
 
-    // Update local order history and navigate to history.
     setState(() {
       orders.insert(0, order);
       currentIndex = 1;
     });
   }
 
+  // Logout
+  Future<void> handleLogout() async {
+    try {
+      await context.read<PaygameController>().logout();
+
+      if (!mounted) return;
+
+      setState(() {
+        currentIndex = 3;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Logout successful')));
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userPoints = context.watch<PaygameController>().userPointsBalance;
+    final controller = context.watch<PaygameController>();
 
     return Scaffold(
-      // Main page content.
       body: IndexedStack(
         index: currentIndex,
         children: [
-          // Home Page
           HomeView(
             onPaymentCompleted: handlePaymentCompleted,
-            initialPoints: userPoints,
+            initialPoints: controller.userPointsBalance,
           ),
 
-          // Purchase History
           PurchaseHistoryView(orders: orders),
 
-          // Reward History
           const RewardsScreen(),
 
-          // Login Page
-          LoginScreen(
-            onLoginSuccess: () {
-              setState(() {
-                currentIndex = 0;
-              });
-            },
-          ),
+          // Change Login page to Account page after login
+          if (controller.authToken == null)
+            LoginScreen(
+              onLoginSuccess: () {
+                setState(() {
+                  currentIndex = 0;
+                });
+              },
+            )
+          else
+            AccountView(
+              username: controller.currentUsername,
+              displayName: controller.currentDisplayName,
+              role: controller.currentRole,
+              onLogout: handleLogout,
+            ),
         ],
       ),
-
-      // Bottom Navigation.
-      bottomNavigationBar: buildNavigationBar(),
+      bottomNavigationBar: buildNavigationBar(controller.authToken != null),
     );
   }
 
-  // Navigation bar builder.
-  Widget buildNavigationBar() {
+  Widget buildNavigationBar(bool isLoggedIn) {
     return NavigationBar(
       selectedIndex: currentIndex,
-
-      // Change the selected page.
       onDestinationSelected: (destinationIndex) {
         setState(() {
           currentIndex = destinationIndex;
         });
       },
-
-      // Navigation destinations.
-      destinations: const [
-        NavigationDestination(
+      destinations: [
+        const NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
           label: 'Home',
         ),
-
-        NavigationDestination(
+        const NavigationDestination(
           icon: Icon(Icons.receipt_long_outlined),
           selectedIcon: Icon(Icons.receipt_long),
           label: 'History',
         ),
-
-        NavigationDestination(
+        const NavigationDestination(
           icon: Icon(Icons.card_giftcard_outlined),
           selectedIcon: Icon(Icons.card_giftcard),
           label: 'Rewards',
         ),
-
         NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Login',
+          icon: Icon(isLoggedIn ? Icons.person : Icons.person_outline),
+          selectedIcon: const Icon(Icons.person),
+          label: isLoggedIn ? 'Account' : 'Login',
         ),
       ],
+    );
+  }
+}
+
+// Account page
+class AccountView extends StatelessWidget {
+  final String username;
+  final String displayName;
+  final String role;
+  final VoidCallback onLogout;
+
+  const AccountView({
+    super.key,
+    required this.username,
+    required this.displayName,
+    required this.role,
+    required this.onLogout,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Account'),
+        backgroundColor: const Color(0xFFA60C19),
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: CircleAvatar(
+                radius: 40,
+                child: Icon(Icons.person, size: 45),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text(
+              'Account Information',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 16),
+
+            Text('Display Name: $displayName'),
+            const SizedBox(height: 8),
+
+            Text('Username: $username'),
+            const SizedBox(height: 8),
+
+            Text('Role: ${role.toUpperCase()}'),
+
+            const Spacer(),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onLogout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFA60C19),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.all(14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

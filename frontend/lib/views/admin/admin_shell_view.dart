@@ -10,21 +10,20 @@ import 'package:frontend/views/admin/receipts/admin_receipt_view.dart';
 import 'package:frontend/views/admin/users/admin_user_view.dart';
 
 class AdminShellView extends StatefulWidget {
-  const AdminShellView({super.key});
+  final Future<void> Function()? onLogout;
+
+  const AdminShellView({super.key, this.onLogout});
 
   @override
   State<AdminShellView> createState() => _AdminShellViewState();
 }
 
 class _AdminShellViewState extends State<AdminShellView> {
-  // Selected page
   int currentIndex = 0;
 
-  // Main color
   static const Color primaryColor = Color(0xFFA60C19);
   static const Color goldColor = Color(0xFFD4AF37);
 
-  // Admin pages
   final List<Widget> pages = const [
     AdminDashboardView(),
     AdminGamesView(),
@@ -36,7 +35,6 @@ class _AdminShellViewState extends State<AdminShellView> {
     AdminUsersView(),
   ];
 
-  // Navigation menu
   final List<NavigationDestination> destinations = const [
     NavigationDestination(
       icon: Icon(Icons.dashboard_outlined),
@@ -80,11 +78,16 @@ class _AdminShellViewState extends State<AdminShellView> {
     ),
   ];
 
-  // Change page
   void changePage(int index) {
     setState(() {
       currentIndex = index;
     });
+  }
+
+  Future<void> handleLogout() async {
+    if (widget.onLogout != null) {
+      await widget.onLogout!();
+    }
   }
 
   @override
@@ -97,7 +100,6 @@ class _AdminShellViewState extends State<AdminShellView> {
           return Scaffold(
             body: Row(
               children: [
-                // Side navigation
                 Container(
                   color: Colors.white,
                   child: NavigationRail(
@@ -147,6 +149,19 @@ class _AdminShellViewState extends State<AdminShellView> {
                         label: Text(item.label),
                       );
                     }).toList(),
+                    trailing: Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: IconButton(
+                            tooltip: 'Logout',
+                            icon: const Icon(Icons.logout, color: primaryColor),
+                            onPressed: handleLogout,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -156,7 +171,6 @@ class _AdminShellViewState extends State<AdminShellView> {
                   color: Color(0xFFF3E7D3),
                 ),
 
-                // Main content
                 Expanded(
                   child: IndexedStack(index: currentIndex, children: pages),
                 ),
@@ -165,9 +179,14 @@ class _AdminShellViewState extends State<AdminShellView> {
           );
         }
 
-        // Mobile and tablet layout
         return Scaffold(
           body: IndexedStack(index: currentIndex, children: pages),
+          floatingActionButton: FloatingActionButton(
+            onPressed: handleLogout,
+            backgroundColor: primaryColor,
+            tooltip: 'Logout',
+            child: const Icon(Icons.logout, color: Colors.white),
+          ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: currentIndex,
             onDestinationSelected: changePage,

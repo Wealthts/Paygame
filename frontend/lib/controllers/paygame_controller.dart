@@ -5,7 +5,7 @@ import 'package:frontend/services/auth_service.dart';
 class PaygameController extends ChangeNotifier {
   String? authToken;
   String currentRole = 'user';
-  String currentUsername = 'Natthawat';
+  String currentUsername = '';
   int? currentUserId;
   String currentDisplayName = '';
   int userPointsBalance = 2000;

@@ -154,40 +154,40 @@ router.put("/:id", verifyToken, verifyAdmin, (req, res) => {
         WHERE package_id = ?
     `;
 
-    con.query(
-        sql,
-        [package_name.trim(), packagePrice, Number(is_active), id],
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).send("DB error");
-            }
+    con.query(sql, [
+        package_name.trim(),
+        packagePrice,
+        Number(is_active),
+        id
+    ], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
 
-            if (result.affectedRows === 0) {
-                return con.query(
-                    "SELECT package_id FROM packages WHERE package_id = ?",
-                    [id],
-                    (checkErr, rows) => {
-                        if (checkErr) {
-                            console.error(checkErr);
-                            return res.status(500).send("DB error");
-                        }
+        if (result.affectedRows === 0) {
+            return con.query("SELECT package_id FROM packages WHERE package_id = ?",
+                [id], (checkErr, rows) => {
+                    if (checkErr) {
+                        console.error(checkErr);
+                        return res.status(500).send("DB error");
+                    }
 
-                        if (rows.length === 0) {
-                            return res.status(404).send("Package not found");
-                        }
+                    if (rows.length === 0) {
+                        return res.status(404).send("Package not found");
+                    }
 
-                        return res.json({
-                            message: "Package unchanged",
-                        });
-                    },
-                );
-            }
+                    return res.json({
+                        message: "Package unchanged",
+                    });
+                },
+            );
+        }
 
-            return res.json({
-                message: "Package updated successfully",
-            });
-        },
+        return res.json({
+            message: "Package updated successfully",
+        });
+    },
     );
 });
 
@@ -195,16 +195,15 @@ router.put("/:id", verifyToken, verifyAdmin, (req, res) => {
 // DELETE api/packages/:id
 router.delete("/:id", verifyToken, verifyAdmin, (req, res) => {
     const id = Number(req.params.id);
-
-    if (!Number.isInteger(id) || id <= 0) {
-        return res.status(400).send("Invalid package ID");
-    }
-
     const sql = `
         UPDATE packages
         SET is_active = 0
         WHERE package_id = ?
     `;
+
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send("Invalid package ID");
+    }
 
     con.query(sql, [id], (err, result) => {
         if (err) {
@@ -213,10 +212,8 @@ router.delete("/:id", verifyToken, verifyAdmin, (req, res) => {
         }
 
         if (result.affectedRows === 0) {
-            return con.query(
-                "SELECT package_id FROM packages WHERE package_id = ?",
-                [id],
-                (checkErr, rows) => {
+            return con.query("SELECT package_id FROM packages WHERE package_id = ?",
+                [id], (checkErr, rows) => {
                     if (checkErr) {
                         console.error(checkErr);
                         return res.status(500).send("DB error");

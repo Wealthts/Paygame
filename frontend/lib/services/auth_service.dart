@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
 
 class AuthService {
-  
   // Login
   static Future<Map<String, dynamic>> login(
     String username,
@@ -24,27 +24,26 @@ class AuthService {
 
     // save JWT token
     await ApiService.saveToken(token.toString());
+    // check JWT token
+    final savedToken = await ApiService.getToken();
+    debugPrint('JWT Token Saved: ${savedToken != null}');
+
     return response;
   }
 
   // Register
-  static Future<Map<String, dynamic>> register({
+  static Future<dynamic> register({
     required String username,
-    required String password,
-    required String email,
     required String displayName,
+    required String email,
+    required String password,
   }) async {
-    final response = await ApiService.post('/register', {
-      "username": username,
-      "password": password,
-      "email": email,
-      "display name": displayName,
+    return await ApiService.post('/register', {
+      'username': username,
+      'display_name': displayName,
+      'email': email,
+      'password': password,
     }, requiresAuth: false);
-
-    if (response is! Map<String, dynamic>) {
-      throw Exception("Invalid register response");
-    }
-    return response;
   }
 
   // Logout

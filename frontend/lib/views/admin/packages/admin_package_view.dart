@@ -29,9 +29,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     loadGames();
   }
 
-  // ==========================================
   // Load games
-  // ==========================================
   Future<void> loadGames() async {
     setState(() {
       isLoadingGames = true;
@@ -72,9 +70,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     });
   }
 
-  // ==========================================
   // Load packages
-  // ==========================================
   Future<void> loadPackages(String gameId) async {
     setState(() {
       isLoadingPackages = true;
@@ -105,9 +101,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     });
   }
 
-  // ==========================================
   // Show add / edit dialog
-  // ==========================================
   Future<PackageModel?> showPackageDialog({PackageModel? package}) async {
     final formKey = GlobalKey<FormState>();
 
@@ -212,9 +206,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     return result;
   }
 
-  // ==========================================
   // Add package
-  // ==========================================
   Future<void> addPackage() async {
     if (selectedGameId == null) return;
 
@@ -257,9 +249,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     });
   }
 
-  // ==========================================
   // Edit package
-  // ==========================================
   Future<void> editPackage(PackageModel package) async {
     final updatedPackage = await showPackageDialog(package: package);
 
@@ -300,9 +290,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     });
   }
 
-  // ==========================================
   // Activate / Deactivate package
-  // ==========================================
   Future<void> togglePackageStatus(PackageModel package) async {
     final action = package.isActive ? 'deactivate' : 'activate';
 
@@ -385,9 +373,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     });
   }
 
-  // ==========================================
   // Build package card
-  // ==========================================
   Widget buildPackageCard(PackageModel package) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -465,9 +451,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
     );
   }
 
-  // ==========================================
   // Build page
-  // ==========================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -493,7 +477,7 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
                 children: [
                   // Game selection
                   DropdownButtonFormField<String>(
-                    value: selectedGameId,
+                    initialValue: selectedGameId,
                     decoration: const InputDecoration(
                       labelText: 'Select Game',
                       border: OutlineInputBorder(),
