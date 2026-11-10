@@ -11,6 +11,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   // Variables
   final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController(); // เพิ่ม emailController[cite: 6]
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -41,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose(); // คืนค่าทรัพยากร emailController[cite: 6]
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -175,9 +177,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: s16),
 
+              // Email [เพิ่มส่วนนี้][cite: 6]
+              _buildInputField(
+                label: 'Email',
+                hintText: 'you@email.com',
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+
+              const SizedBox(height: s16),
+
               // Password
               _buildInputField(
-                label: 'password',
+                label: 'Password',
                 hintText: 'at least 8 characters',
                 controller: passwordController,
                 isPassword: true,
