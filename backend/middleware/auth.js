@@ -1,25 +1,35 @@
 const jwt = require('jsonwebtoken');
 const JWT_KEY = 'paygame_secret_key';
 
-// Check JWT
+// Verify JWT Token
 function verifyToken(req, res, next) {
-    const header = req.headers['authorization'];
-    if (!header) return res.status(401).send('Token required');
-    const token = header.split(' ')[1];
-    if (!token) return res.status(401).send('Invalid token');
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({
+            message: "Access token required"
+        });
+    }
 
     try {
         const payload = jwt.verify(token, JWT_KEY);
         req.user = payload;
         next();
     } catch (err) {
-        return res.status(403).send('Unauthorized');
+        return res.status(403).json({
+            message: "Invalid or expired token"
+        });
     }
 }
 
-// Check Admin
+// Verify Admin Role
 function verifyAdmin(req, res, next) {
-    if (req.user.role !== 'admin') return res.status(403).send('Admin only');
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+            message: "Admin access required"
+        });
+    }
     next();
 }
 

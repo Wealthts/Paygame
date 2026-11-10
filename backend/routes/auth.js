@@ -142,7 +142,7 @@ router.post('/login', (req, res) => {
 
         if (user.is_active !== 1) {
             return res.status(403).json({
-                message: 'This account is inactive'
+                message: "This account is inactive"
             });
         }
 
@@ -155,7 +155,7 @@ router.post('/login', (req, res) => {
 
             if (!passwordMatch) {
                 return res.status(401).json({
-                    message: 'Invalid username or password'
+                    message: "Invalid username or password"
                 });
             }
 
@@ -166,14 +166,14 @@ router.post('/login', (req, res) => {
                     username: user.username,
                     role: user.role
                 },
-                JWT_SECRET,
+                JWT_KEY,
                 {
                     expiresIn: '1d'
                 }
             );
 
             return res.json({
-                message: 'Login successful',
+                message: "Login successful",
                 token: token,
                 user: {
                     id: user.user_id,
@@ -185,65 +185,9 @@ router.post('/login', (req, res) => {
         } catch (error) {
             console.error(error);
             return res.status(500).json({
-                message: 'Login failed'
+                message: "Login failed"
             });
         }
-    });
-});
-
-// Login
-router.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const sql = "SELECT * FROM users WHERE username = ?";
-
-    con.query(sql, [username], (err, result) => {
-        const user = result[0];
-
-        if (err) {
-            console.error(err);
-            return res.status(500).send('DB error');
-        }
-
-        if (result.length !== 1) {
-            return res.status(401).send('Wrong username');
-        }
-
-        // Check account status
-        if (user.is_active !== 1) {
-            return res.status(403).send('Account disabled');
-        }
-
-        // Check password
-        const same = argon2.verifySync(
-            user.password_hash,
-            password
-        );
-
-        if (!same) {
-            return res.status(401).send('Wrong password');
-        }
-
-        // Create JWT
-        const payload = {
-            id: user.user_id,
-            username: user.username,
-            role: user.role
-        };
-
-        const token = jwt.sign(payload, JWT_KEY, {
-            expiresIn: '1d'
-        });
-
-        res.json({
-            message: 'Login successful',
-            token: token,
-            user: {
-                id: user.user_id,
-                username: user.username,
-                display_name: user.display_name,
-                role: user.role
-            }
-        });
     });
 });
 

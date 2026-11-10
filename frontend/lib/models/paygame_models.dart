@@ -81,7 +81,6 @@ class PackageModel {
   final int packageId;
   final String gameId;
   final String packageName;
-  final int quantity;
   final double price;
   final bool isActive;
 
@@ -89,10 +88,30 @@ class PackageModel {
     required this.packageId,
     required this.gameId,
     required this.packageName,
-    required this.quantity,
     required this.price,
     required this.isActive,
   });
+
+  // Convert JSON to PackageModel
+  factory PackageModel.fromJson(Map<String, dynamic> json) {
+    return PackageModel(
+      packageId: int.tryParse(json['package_id'].toString()) ?? 0,
+      gameId: json['game_id'].toString(),
+      packageName: json['package_name'] ?? '',
+      price: double.tryParse(json['price'].toString()) ?? 0.0,
+      isActive: _readBool(json['is_active']),
+    );
+  }
+
+  // Convert PackageModel to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'game_id': int.tryParse(gameId) ?? 0,
+      'package_name': packageName,
+      'price': price,
+      'is_active': isActive ? 1 : 0,
+    };
+  }
 }
 
 class OrderModel {

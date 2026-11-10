@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/paygame_models.dart';
+import 'package:frontend/services/auth_service.dart';
 
 class PaygameController extends ChangeNotifier {
   String? authToken;
   String currentRole = 'user';
   String currentUsername = 'Natthawat';
+  int? currentUserId;
+  String currentDisplayName = '';
   int userPointsBalance = 2000;
 
   OrderModel? latestOrder;
@@ -85,7 +88,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 101,
         gameId: 'rov',
         packageName: '40 coupons',
-        quantity: 40,
         price: 35,
         isActive: true,
       ),
@@ -93,7 +95,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 102,
         gameId: 'rov',
         packageName: '90 coupons',
-        quantity: 90,
         price: 79,
         isActive: true,
       ),
@@ -101,7 +102,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 103,
         gameId: 'rov',
         packageName: '230 coupons',
-        quantity: 230,
         price: 199,
         isActive: true,
       ),
@@ -109,7 +109,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 104,
         gameId: 'rov',
         packageName: '400 coupons',
-        quantity: 400,
         price: 350,
         isActive: true,
       ),
@@ -119,7 +118,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 201,
         gameId: 'ff',
         packageName: '100 gems',
-        quantity: 100,
         price: 39,
         isActive: true,
       ),
@@ -127,7 +125,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 202,
         gameId: 'ff',
         packageName: '310 gems',
-        quantity: 310,
         price: 119,
         isActive: true,
       ),
@@ -137,7 +134,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 301,
         gameId: 'genshin',
         packageName: '60 Crystals',
-        quantity: 60,
         price: 35,
         isActive: true,
       ),
@@ -145,7 +141,6 @@ class PaygameController extends ChangeNotifier {
         packageId: 302,
         gameId: 'genshin',
         packageName: '300 Crystals',
-        quantity: 300,
         price: 179,
         isActive: true,
       ),
@@ -185,13 +180,50 @@ class PaygameController extends ChangeNotifier {
     ),
   ];
 
-  bool login(String username, String password) {
-    if (username.isEmpty || password.isEmpty) return false;
-    authToken = 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}';
-    currentUsername = username;
-    currentRole = username.toLowerCase() == 'admin' ? 'admin' : 'user';
+  // bool login(String username, String password) {
+  //   if (username.isEmpty || password.isEmpty) return false;
+  //   authToken = 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}';
+  //   currentUsername = username;
+  //   currentRole = username.toLowerCase() == 'admin' ? 'admin' : 'user';
+  //   notifyListeners();
+  //   return true;
+  // }
+
+  // Login with backend
+  Future<void> login(String username, String password) async {
+    if (username.trim().isEmpty || password.isEmpty) {
+      throw Exception("Plases enter username and password");
+    }
+
+    // send login request to backend
+    final response = await AuthService.login(username.trim(), password);
+    final user = response['user'];
+
+    if (user is! Map) {
+      throw Exception("Invalid user information");
+    }
+
+    // update user information
+    currentUserId = int.tryParse(user['id'].toString());
+    currentUsername = user['username']?.toString() ?? username;
+    currentDisplayName = user['display_name']?.toString() ?? '';
+    currentRole = user['role']?.toString() ?? 'user';
+
+    // get JWT token
+    authToken = response['token']?.toString();
     notifyListeners();
-    return true;
+  }
+
+  // logout
+  Future<void> logout() async {
+    await AuthService.logout();
+
+    authToken = null;
+    currentUserId = null;
+    currentUsername = '';
+    currentDisplayName = '';
+    currentRole = 'user';
+    notifyListeners();
   }
 
   void addOrder(OrderModel order) {

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/controllers/paygame_controller.dart';
 import 'package:frontend/views/register_view.dart';
 import 'package:frontend/views/forget_view.dart';
 import 'package:frontend/views/admin/admin_shell_view.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key ?? const Key('login_screen'));
+  final VoidCallback? onLoginSuccess;
+  const LoginScreen({Key? key, this.onLoginSuccess})
+    : super(key: key ?? const Key('login_screen'));
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -14,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool obscurePassword = true;
+  bool isLoading = false;
 
   static const double s8 = 8;
   static const double s16 = 16;
@@ -26,8 +31,65 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
-
     super.dispose();
+  }
+
+  // Login function
+  Future<void> handleLogin() async {
+    if (isLoading) return;
+
+    final username = usernameController.text.trim();
+    final password = passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter username and password")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final controller = context.read<PaygameController>();
+
+      await controller.login(username, password);
+
+      if (!mounted) return;
+
+      // Admin Navigation
+      if (controller.currentRole == 'admin') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminShellView()),
+          (route) => false,
+        );
+      } else {
+        // User Navigation
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Login successful")));
+
+        widget.onLoginSuccess?.call();
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   // Main Build
@@ -200,9 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implement Login Logic
-                  },
+                  onPressed: isLoading ? null : handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: red,
                     shape: RoundedRectangleBorder(
@@ -210,14 +270,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Log in',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Log in',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
 

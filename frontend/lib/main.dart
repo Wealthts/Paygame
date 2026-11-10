@@ -7,7 +7,7 @@ import 'package:frontend/models/paygame_models.dart';
 import 'package:frontend/theme/app_theme.dart';
 
 import 'package:frontend/views/login_view.dart';
-import 'package:frontend/views/user/home_view.dart';
+import 'package:frontend/views/user/paygame_shell_view.dart';
 import 'package:frontend/views/user/purchase_history_view.dart';
 import 'package:frontend/views/user/reward_history_view.dart';
 import 'package:frontend/views/user/game_detail_view.dart';
@@ -98,7 +98,13 @@ class _GamePayShellState extends State<GamePayShell> {
           const RewardsScreen(),
 
           // Login Page
-          const LoginScreen(),
+          LoginScreen(
+            onLoginSuccess: () {
+              setState(() {
+                currentIndex = 0;
+              });
+            },
+          ),
         ],
       ),
 

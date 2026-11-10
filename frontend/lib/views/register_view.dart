@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key})
@@ -12,8 +13,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Variables
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController displayNameController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  bool isLoading = false;
 
   bool isAcceptedTerms = false;
   bool obscurePassword = true;
@@ -41,6 +45,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose();
+    displayNameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -166,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Username
-              _buildInputField(
+              buildInputField(
                 label: 'Username',
                 hintText: 'username',
                 controller: usernameController,
@@ -175,8 +181,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: s16),
 
+              // Display Name
+              buildInputField(
+                label: 'Display Name',
+                hintText: 'Your display name',
+                controller: displayNameController,
+                textInputAction: TextInputAction.next,
+              ),
+
+              const SizedBox(height: s16),
+
+              // Email
+              buildInputField(
+                label: 'Email',
+                hintText: 'example@email.com',
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+
+              const SizedBox(height: s16),
+
               // Password
-              _buildInputField(
+              buildInputField(
                 label: 'password',
                 hintText: 'at least 8 characters',
                 controller: passwordController,
@@ -193,12 +220,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: s8),
 
               // Password Strength Indicator
-              _buildPasswordStrength(),
+              buildPasswordStrength(),
 
               const SizedBox(height: s16),
 
               // Confirm Password
-              _buildInputField(
+              buildInputField(
                 label: 'Confirm Password',
                 hintText: '........',
                 controller: confirmPasswordController,
@@ -215,7 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: s16),
 
               // Terms and Conditions
-              _buildTermsRow(),
+              buildTermsRow(),
 
               const SizedBox(height: s24),
 
@@ -224,11 +251,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: isAcceptedTerms
-                      ? () {
-                          // TODO: Implement Register logic
-                          // with Argon2id hash
-                        }
+                  onPressed: isAcceptedTerms && !isLoading
+                      ? handleRegister
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: red,
@@ -238,14 +262,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -255,8 +288,102 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Register Function
+  Future<void> handleRegister() async {
+    if (isLoading) return;
+
+    final username = usernameController.text.trim();
+    final email = emailController.text.trim();
+    final displayName = displayNameController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmPasswordController.text;
+
+    // Check empty fields
+    if (username.isEmpty ||
+        email.isEmpty ||
+        displayName.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete all fields')),
+      );
+      return;
+    }
+
+    // Check username
+    if (username.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username must be at least 3 characters')),
+      );
+      return;
+    }
+
+    // Check email
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email')),
+      );
+      return;
+    }
+
+    // Check password
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
+      return;
+    }
+
+    // Check confirm password
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await AuthService.register(
+        username: username,
+        password: password,
+        email: email,
+        displayName: displayName,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful. Please log in.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   // Password Strength Indicator
-  Widget _buildPasswordStrength() {
+  Widget buildPasswordStrength() {
     final strength = passwordStrength;
 
     final labels = ['', 'Weak', 'Medium', 'Strong'];
@@ -310,7 +437,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Terms and Conditions
-  Widget _buildTermsRow() {
+  Widget buildTermsRow() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -397,7 +524,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Reusable Input Field
-  Widget _buildInputField({
+  Widget buildInputField({
     required String label,
     required String hintText,
     required TextEditingController controller,
