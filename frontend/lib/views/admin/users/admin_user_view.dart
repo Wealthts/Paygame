@@ -19,6 +19,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRoleFilter = 'All';
   String _selectedStatusFilter = 'All';
+  String _sortBy = 'latest'; // 'latest' | 'name'
 
   @override
   void initState() {
@@ -63,7 +64,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   // กรองข้อมูลตามคำค้นหา, Role และ Status
   List<UserModel> get _filteredUsers {
     final query = _searchController.text.toLowerCase();
-    return _allUsers.where((user) {
+    final list = _allUsers.where((user) {
       final matchesSearch =
           user.username.toLowerCase().contains(query) ||
           user.displayName.toLowerCase().contains(query) ||
@@ -76,6 +77,13 @@ class _AdminUsersViewState extends State<AdminUsersView> {
           (_selectedStatusFilter == 'Inactive' && !user.isActive);
       return matchesSearch && matchesRole && matchesStatus;
     }).toList();
+
+    if (_sortBy == 'name') {
+      list.sort((a, b) => a.displayName.compareTo(b.displayName));
+    } else {
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    return list;
   }
 
   // 1. เปลี่ยนบทบาทเป็น Admin (บัญชี Admin เปลี่ยนกลับไม่ได้)
@@ -319,11 +327,78 @@ class _AdminUsersViewState extends State<AdminUsersView> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildSearchField(),
+            _buildStats(),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildSearchField()),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: _sortBy == 'name'
+                      ? 'เรียงตามชื่อ'
+                      : 'เรียงตามวันที่สมัครล่าสุด',
+                  icon: Icon(
+                    _sortBy == 'name' ? Icons.sort_by_alpha : Icons.access_time,
+                  ),
+                  onPressed: () => setState(
+                    () => _sortBy = _sortBy == 'name' ? 'latest' : 'name',
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             _buildFilters(),
             const SizedBox(height: 16),
             Expanded(child: _buildBody()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // แถบสรุปจำนวนผู้ใช้
+  Widget _buildStats() {
+    final total = _allUsers.length;
+    final activeCount = _allUsers.where((u) => u.isActive).length;
+    return Row(
+      children: [
+        _buildStatCard('ทั้งหมด', '$total', Colors.blue),
+        const SizedBox(width: 8),
+        _buildStatCard('ใช้งานปกติ', '$activeCount', Colors.green),
+        const SizedBox(width: 8),
+        _buildStatCard('ถูกระงับ', '${total - activeCount}', Colors.red),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String count, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              count,
+              style: TextStyle(
+                fontSize: 18,
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
