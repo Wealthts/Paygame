@@ -87,14 +87,24 @@ class _AdminUsersViewState extends State<AdminUsersView> {
     }).toList();
   }
 
-  // 1. ฟังก์ชันสลับบทบาท (Toggle Role)
+  // 1. ฟังก์ชันสลับบทบาท (Toggle Role) - ล็อกไม่ให้เปลี่ยนสิทธิ์บัญชี Admin
   void _toggleRole(UserModel user) {
+    if (user.role == 'admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ไม่สามารถเปลี่ยนบทบาทของบัญชี Admin ได้'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('ยืนยันเปลี่ยนบทบาท'),
         content: Text(
-          'ต้องการเปลี่ยนบทบาทของ "${user.displayName}" เป็น "${user.role == 'admin' ? 'User' : 'Admin'}" ใช่หรือไม่?',
+          'ต้องการเปลี่ยนบทบาทของ "${user.displayName}" เป็น "Admin" ใช่หรือไม่?',
         ),
         actions: [
           TextButton(
@@ -105,11 +115,11 @@ class _AdminUsersViewState extends State<AdminUsersView> {
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA60C19)),
             onPressed: () {
               setState(() {
-                user.role = user.role == 'admin' ? 'user' : 'admin';
+                user.role = 'admin';
               });
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('เปลี่ยนบทบาทเป็น ${user.role} สำเร็จ')),
+                const SnackBar(content: Text('เปลี่ยนบทบาทเป็น Admin สำเร็จ')),
               );
             },
             child: const Text('ยืนยัน', style: TextStyle(color: Colors.white)),
@@ -119,8 +129,18 @@ class _AdminUsersViewState extends State<AdminUsersView> {
     );
   }
 
-  // 2. ฟังก์ชันเปิด/ปิดการใช้งาน (Toggle Active Status)
+  // 2. ฟังก์ชันเปิด/ปิดการใช้งาน (Toggle Active Status) - ล็อกไม่ให้ระงับบัญชี Admin
   void _toggleActiveStatus(UserModel user, bool newStatus) {
+    if (user.role == 'admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ไม่สามารถระงับการใช้งานบัญชี Admin ได้'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       user.isActive = newStatus;
     });
@@ -386,6 +406,8 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                       itemCount: filteredList.length,
                       itemBuilder: (context, index) {
                         final user = filteredList[index];
+                        final isAdmin = user.role == 'admin';
+
                         return Card(
                           elevation: 1.5,
                           margin: const EdgeInsets.only(bottom: 10),
@@ -394,11 +416,11 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             onTap: () => _showUserDetailsModal(user),
                             leading: CircleAvatar(
                               backgroundColor:
-                                  user.role == 'admin' ? Colors.red.shade100 : Colors.blue.shade100,
+                                  isAdmin ? Colors.red.shade100 : Colors.blue.shade100,
                               child: Text(
                                 user.displayName[0].toUpperCase(),
                                 style: TextStyle(
-                                  color: user.role == 'admin' ? Colors.red : Colors.blue,
+                                  color: isAdmin ? Colors.red : Colors.blue,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -415,7 +437,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                                     user.role.toUpperCase(),
                                     style: const TextStyle(fontSize: 10, color: Colors.white),
                                   ),
-                                  backgroundColor: user.role == 'admin'
+                                  backgroundColor: isAdmin
                                       ? const Color(0xFFA60C19)
                                       : Colors.blue,
                                   visualDensity: VisualDensity.compact,
@@ -427,11 +449,13 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // สวิตช์เปิด/ปิดใช้งาน (is_active)
+                                // สวิตช์เปิด/ปิดใช้งาน (ถูก Disable ไม่ให้กดหากเป็น role == 'admin')
                                 Switch(
                                   value: user.isActive,
                                   activeColor: Colors.green,
-                                  onChanged: (val) => _toggleActiveStatus(user, val),
+                                  onChanged: isAdmin
+                                      ? null // ไม่สามารถสลับสถานะ Admin ได้
+                                      : (val) => _toggleActiveStatus(user, val),
                                 ),
 
                                 // เมนูการจัดการ (Actions)
@@ -450,10 +474,12 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                                       value: 'details',
                                       child: Text('ดูรายละเอียด & ประวัติ'),
                                     ),
-                                    PopupMenuItem(
-                                      value: 'toggle_role',
-                                      child: Text('เปลี่ยนเป็น ${user.role == 'admin' ? 'User' : 'Admin'}'),
-                                    ),
+                                    // ซ่อนตัวเลือกเปลี่ยนบทบาทถ้าผู้ใช้คนนั้นเป็น Admin อยู่แล้ว
+                                    if (!isAdmin)
+                                      const PopupMenuItem(
+                                        value: 'toggle_role',
+                                        child: Text('เปลี่ยนเป็น Admin'),
+                                      ),
                                     const PopupMenuItem(
                                       value: 'reset_pwd',
                                       child: Text('รีเซ็ตรหัสผ่าน'),
