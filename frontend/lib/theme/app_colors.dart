@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// โทนสี GamePay: แดง - ขาว - ทอง (ตรงกับ UI sketch)
+// โทนสี Paygame: แดง - ขาว - ทอง (ตรงกับ UI sketch)
 class AppColors {
   AppColors._();
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:frontend/services/api_service.dart';
 
-// Model แปลงข้อมูลจากตาราง `users`
 class UserModel {
   final int userId;
   final String username;
@@ -24,23 +24,18 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       userId: json['user_id'],
-      username: json['username'],
-      email: json['email'],
-      displayName: json['display_name'],
-      role: json['role'],
+      username: json['username'] ?? '',
+      email: json['email'] ?? '',
+      displayName: json['display_name'] ?? '',
+      role: json['role'] ?? 'user',
       isActive: json['is_active'] == 1 || json['is_active'] == true,
-      createdAt: DateTime.parse(json['created_at'].toString()),
+      createdAt: DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now(),
     );
   }
 }
 
 class AdminUsersView extends StatefulWidget {
-  final int currentAdminId; // ID ของ Admin ที่กำลังล็อกอินอยู่ (มาจาก JWT/Session)
-
-  const AdminUsersView({
-    super.key,
-    this.currentAdminId = 1, // สมมุติ ID 1 ตามตาราง paygame.sql
-  });
+  const AdminUsersView({super.key});
 
   @override
   State<AdminUsersView> createState() => _AdminUsersViewState();
@@ -54,40 +49,42 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRoleFilter = 'All';
   String _selectedStatusFilter = 'All';
+  String _sortBy = 'latest'; // 'latest' | 'name'
 
   @override
   void initState() {
     super.initState();
+    _fetchUsers();
     _initRealtimeSocket();
   }
 
+  Future<void> _fetchUsers() async {
+    try {
+      final response = await ApiService.get('/users');
+      if (mounted && response is Map && response['users'] is List) {
+        setState(() {
+          _allUsers = (response['users'] as List)
+              .map((e) => UserModel.fromJson(e))
+              .toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _initRealtimeSocket() {
-    // หมายเหตุ: กรณีทดสอบบน Android Emulator ให้ใช้ IP '10.0.2.2:3000' แทน localhost
     _socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
     });
 
-    _socket.onConnect((_) {
-      _socket.emit('get_users');
-    });
-
-    // ฟัง Event ข้อมูล Real-time จาก Server Node.js
     _socket.on('users_updated', (data) {
-      if (mounted) {
+      if (mounted && data is List) {
         setState(() {
-          _allUsers = (data as List).map((e) => UserModel.fromJson(e)).toList();
-          _isLoading = false;
+          _allUsers = data.map((e) => UserModel.fromJson(e)).toList();
         });
-      }
-    });
-
-    // ฟัง Event แจ้งเตือนข้อผิดพลาด
-    _socket.on('error_message', (msg) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg.toString()), backgroundColor: Colors.red),
-        );
       }
     });
   }
@@ -100,7 +97,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   }
 
   List<UserModel> get _filteredUsers {
-    return _allUsers.where((user) {
+    List<UserModel> list = _allUsers.where((user) {
       final query = _searchController.text.toLowerCase();
       final matchesSearch = user.username.toLowerCase().contains(query) ||
           user.displayName.toLowerCase().contains(query) ||
@@ -113,48 +110,174 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
       return matchesSearch && matchesRole && matchesStatus;
     }).toList();
-  }
 
-  // ส่ง Event เปลี่ยนสถานะ active
-  void _toggleActiveStatus(UserModel user, bool newStatus) {
-    if (user.userId == widget.currentAdminId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('คุณไม่สามารถระงับบัญชีของตนเองได้'), backgroundColor: Colors.orange),
-      );
-      return;
+    if (_sortBy == 'name') {
+      list.sort((a, b) => a.displayName.compareTo(b.displayName));
+    } else {
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
-    _socket.emit('update_user_status', {
-      'admin_id': widget.currentAdminId,
-      'target_user_id': user.userId,
-      'is_active': newStatus ? 1 : 0,
-    });
+    return list;
   }
 
-  // ส่ง Event เปลี่ยน role
-  void _toggleRole(UserModel user) {
-    if (user.userId == widget.currentAdminId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('คุณไม่สามารถเปลี่ยนบทบาทตนเองได้'), backgroundColor: Colors.orange),
-      );
+  // 1. สลับสถานะ (ห้ามระงับ Admin)[cite: 7]
+  Future<void> _toggleActiveStatus(UserModel user, bool newStatus) async {
+    if (user.role == 'admin') {
+      _showSnackBar('ไม่สามารถระงับการใช้งานบัญชี Admin ได้', Colors.redAccent);
       return;
     }
+    try {
+      await ApiService.put('/users/${user.userId}/status', {'is_active': newStatus});
+    } catch (e) {
+      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
+    }
+  }
 
-    final newRole = user.role == 'admin' ? 'user' : 'admin';
-    _socket.emit('update_user_role', {
-      'admin_id': widget.currentAdminId,
-      'target_user_id': user.userId,
-      'role': newRole,
-    });
+  // 2. เปลี่ยน Role (ห้ามปรับ Admin)[cite: 7]
+  Future<void> _toggleRole(UserModel user) async {
+    if (user.role == 'admin') {
+      _showSnackBar('ไม่สามารถเปลี่ยนบทบาทของบัญชี Admin ได้', Colors.orange);
+      return;
+    }
+    try {
+      await ApiService.put('/users/${user.userId}/role', {'role': 'admin'});
+    } catch (e) {
+      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
+    }
+  }
+
+  // 3. แก้ไขข้อมูล Profile[cite: 7]
+  void _showEditProfileDialog(UserModel user) {
+    final nameCtrl = TextEditingController(text: user.displayName);
+    final emailCtrl = TextEditingController(text: user.email);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('แก้ไขข้อมูล: ${user.username}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Display Name')),
+            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA60C19)),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ApiService.put('/users/${user.userId}/profile', {
+                  'display_name': nameCtrl.text.trim(),
+                  'email': emailCtrl.text.trim(),
+                });
+                _showSnackBar('แก้ไขข้อมูลเรียบร้อย', Colors.green);
+              } catch (e) {
+                _showSnackBar('แก้ไขข้อมูลไม่สำเร็จ', Colors.red);
+              }
+            },
+            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 4. รีเซ็ตรหัสผ่าน[cite: 7]
+  void _showResetPasswordDialog(UserModel user) {
+    final pwdCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('รีเซ็ตรหัสผ่าน: ${user.username}'),
+        content: TextField(
+          controller: pwdCtrl,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFA60C19)),
+            onPressed: () async {
+              if (pwdCtrl.text.length < 6) return;
+              Navigator.pop(ctx);
+              try {
+                await ApiService.put('/users/${user.userId}/reset-password', {
+                  'new_password': pwdCtrl.text.trim(),
+                });
+                _showSnackBar('ตั้งรหัสผ่านใหม่เรียบร้อยแล้ว', Colors.green);
+              } catch (e) {
+                _showSnackBar('รีเซ็ตรหัสผ่านไม่สำเร็จ', Colors.red);
+              }
+            },
+            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 5. ดูประวัติการเติมเงิน[cite: 7]
+  void _showHistoryModal(UserModel user) async {
+    List history = [];
+    try {
+      final res = await ApiService.get('/users/${user.userId}/history');
+      if (res is Map && res['history'] is List) {
+        history = res['history'];
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ประวัติการสั่งซื้อ: ${user.displayName}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Divider(),
+            history.isEmpty
+                ? const Padding(padding: EdgeInsets.all(16.0), child: Center(child: Text('ไม่มีประวัติการเติมเงิน')))
+                : SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      itemCount: history.length,
+                      itemBuilder: (ctx, i) {
+                        final item = history[i];
+                        return ListTile(
+                          title: Text(item['game_name_snapshot'] ?? 'Game'),
+                          subtitle: Text(item['created_at'].toString().split('T')[0]),
+                          trailing: Text('${item['total_amount']} ฿', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                        );
+                      },
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   @override
   Widget build(BuildContext context) {
     final filteredList = _filteredUsers;
+    final total = _allUsers.length;
+    final activeCount = _allUsers.where((u) => u.isActive).length;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('จัดการผู้ใช้งาน (Real-time)'),
+        title: const Text('จัดการผู้ใช้งาน (Real-time Full Option)'),
         backgroundColor: const Color(0xFFA60C19),
         foregroundColor: Colors.white,
       ),
@@ -164,19 +287,47 @@ class _AdminUsersViewState extends State<AdminUsersView> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // แถบค้นหา
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: 'ค้นหาด้วย ชื่อผู้ใช้, ชื่อแสดง หรือ อีเมล...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                  // 1. Summary Statistics Bar
+                  Row(
+                    children: [
+                      _buildStatCard('ทั้งหมด', '$total', Colors.blue),
+                      const SizedBox(width: 8),
+                      _buildStatCard('ใช้งานปกติ', '$activeCount', Colors.green),
+                      const SizedBox(width: 8),
+                      _buildStatCard('ถูกระงับ', '${total - activeCount}', Colors.red),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
-                  // ตัวกรอง Role และ Status
+                  // Search & Sort Bar
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'ค้นหาด้วย ชื่อ/อีเมล...',
+                            prefixIcon: const Icon(Icons.search),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(_sortBy == 'name' ? Icons.sort_by_alpha : Icons.access_time),
+                        onPressed: () {
+                          setState(() {
+                            _sortBy = _sortBy == 'name' ? 'latest' : 'name';
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Filters
                   Row(
                     children: [
                       Expanded(
@@ -188,12 +339,10 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             DropdownMenuItem(value: 'admin', child: Text('Admin')),
                             DropdownMenuItem(value: 'user', child: Text('User')),
                           ],
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedRoleFilter = val);
-                          },
+                          onChanged: (val) => setState(() => _selectedRoleFilter = val!),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _selectedStatusFilter,
@@ -203,16 +352,14 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             DropdownMenuItem(value: 'Active', child: Text('Active')),
                             DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
                           ],
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedStatusFilter = val);
-                          },
+                          onChanged: (val) => setState(() => _selectedStatusFilter = val!),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // แสดงผลลัพธ์
+                  // User List View
                   Expanded(
                     child: filteredList.isEmpty
                         ? const Center(child: Text('ไม่พบข้อมูลผู้ใช้งาน'))
@@ -220,50 +367,41 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             itemCount: filteredList.length,
                             itemBuilder: (context, index) {
                               final user = filteredList[index];
-                              final isSelf = user.userId == widget.currentAdminId;
+                              final isAdmin = user.role == 'admin';
 
                               return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
+                                margin: const EdgeInsets.only(bottom: 8),
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: user.role == 'admin' ? Colors.red.shade100 : Colors.blue.shade100,
+                                    backgroundColor: isAdmin ? Colors.red.shade100 : Colors.blue.shade100,
                                     child: Text(
-                                      user.displayName[0].toUpperCase(),
-                                      style: TextStyle(color: user.role == 'admin' ? Colors.red : Colors.blue),
+                                      user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'U',
+                                      style: TextStyle(color: isAdmin ? Colors.red : Colors.blue, fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                  title: Row(
-                                    children: [
-                                      Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      if (isSelf)
-                                        Container(
-                                          margin: const EdgeInsets.only(left: 6),
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(4)),
-                                          child: const Text('คุณ', style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
-                                        ),
-                                    ],
-                                  ),
+                                  title: Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   subtitle: Text('${user.username} • ${user.email}'),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // สวิตช์ปิด/เปิดใช้งาน (Disable หากเป็นบัญชีตนเอง)
                                       Switch(
                                         value: user.isActive,
                                         activeColor: Colors.green,
-                                        onChanged: isSelf ? null : (val) => _toggleActiveStatus(user, val),
+                                        onChanged: isAdmin ? null : (val) => _toggleActiveStatus(user, val),
                                       ),
                                       PopupMenuButton<String>(
                                         onSelected: (val) {
-                                          if (val == 'toggle_role') _toggleRole(user);
+                                          if (val == 'edit') _showEditProfileDialog(user);
+                                          if (val == 'history') _showHistoryModal(user);
+                                          if (val == 'reset') _showResetPasswordDialog(user);
+                                          if (val == 'role') _toggleRole(user);
                                         },
                                         itemBuilder: (context) => [
-                                          if (!isSelf)
-                                            PopupMenuItem(
-                                              value: 'toggle_role',
-                                              child: Text('เปลี่ยนเป็น ${user.role == 'admin' ? 'User' : 'Admin'}'),
-                                            ),
+                                          const PopupMenuItem(value: 'edit', child: Text('แก้ไขข้อมูล')),
+                                          const PopupMenuItem(value: 'history', child: Text('ดูประวัติการสั่งซื้อ')),
+                                          const PopupMenuItem(value: 'reset', child: Text('รีเซ็ตรหัสผ่าน')),
+                                          if (!isAdmin)
+                                            const PopupMenuItem(value: 'role', child: Text('เปลี่ยนเป็น Admin')),
                                         ],
                                       ),
                                     ],
@@ -276,6 +414,26 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String count, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Text(title, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(count, style: TextStyle(fontSize: 18, color: color, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
     );
   }
 }

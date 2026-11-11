@@ -1,17 +1,17 @@
 const express = require('express');
 const con = require('../db_config');
-const { verifyToken, verifyAdmin } = require('../auth');
+const { verifyToken, verifyAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
 // get all order of user
-router.get('/', verifyToken, verifyAdmin, (req, res) => {
+router.get('/', verifyToken, (req, res) => {
     const user_id = req.user.id;
     let values = [];
     let sql = "SELECT * FROM orders ";
 
     if (req.user.role !== 'admin') {
-        sql += "WHERE user_id = ?";
+        sql += "WHERE user_id = ? ";
         values.push(user_id);
     }
     sql += "ORDER BY created_at DESC";
@@ -26,7 +26,7 @@ router.get('/', verifyToken, verifyAdmin, (req, res) => {
 });
 
 // get order detail
-router.get('/:id', verifyToken, verifyAdmin, (req, res) => {
+router.get('/:id', verifyToken, (req, res) => {
     const id = req.params.id;
     const user_id = req.user.id;
     let values = [id];
@@ -54,8 +54,12 @@ router.get('/:id', verifyToken, verifyAdmin, (req, res) => {
     });
 });
 
+router.put('/:id/complete', verifyToken, verifyAdmin, (req,res) => {
+    res.status(409).send('Approve the pending payment to complete this order');
+});
+
 // create order
-router.post('/', verifyToken, verifyAdmin, (req, res) => {
+router.post('/', verifyToken, (req, res) => {
     const { package_id, player_uid, server_code } = req.body;
     const sql = `
         SELECT 

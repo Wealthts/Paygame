@@ -5,24 +5,31 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 const authRoutes = require('./routes/auth');
-const gameRoutes = require('./routes/games');
-const orderRoutes = require('./routes/orders');
-const packageRoutes = require('./routes/packages');
-const paymentRoutes = require('./routes/payments');
-const pointRoutes = require('./routes/points');
-const receiptRoutes = require('./routes/receipts');
+const gamesRoutes = require('./routes/games');
+const ordersRoutes = require('./routes/orders');
+const packagesRoutes = require('./routes/packages');
+const paymentsRoutes = require('./routes/payments');
+const pointsRoutes = require('./routes/points');
+const receiptsRoutes = require('./routes/receipts');
+const usersRoutes = require('./routes/users');
+const couponsRoutes = require('./routes/coupons');
+const checkoutRoutes = require('./routes/checkout');
 
 // Use Routes
 app.use('/api', authRoutes);
-app.use('/api/games', gameRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/packages', packageRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/points', pointRoutes);
-app.use('/api/receipts', receiptRoutes);
+app.use('/api/games', gamesRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/packages', packagesRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/points', pointsRoutes);
+app.use('/api/receipts', receiptsRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/coupons', couponsRoutes);
+app.use('/api/checkout', checkoutRoutes);
 
 // Start Server
 app.listen(3000, () => {
