@@ -138,6 +138,7 @@ class _GamePayShellState extends State<GamePayShell> {
             coupons: controller.coupons,
             error: controller.walletError,
             onRefresh: controller.refreshWallet,
+            onClaim: controller.claimCoupon,
           ),
 
           // Change Login page to Account page after login
