@@ -8,6 +8,7 @@ class CouponsView extends StatelessWidget {
     this.priceSatang,
     this.selectedId,
     this.onRefresh,
+    this.onClaim,
     this.error,
   });
   final List<CouponModel> coupons;
@@ -15,6 +16,9 @@ class CouponsView extends StatelessWidget {
   final String? selectedId;
   final String? error;
   final Future<void> Function()? onRefresh;
+
+  /// Called with a typed coupon code. When null the code box is hidden.
+  final Future<void> Function(String code)? onClaim;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -32,8 +36,12 @@ class CouponsView extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text('แลกคูปองได้ที่เมนูแลกรางวัล'),
+            const Text('แลกคูปองได้ที่เมนูแลกรางวัล หรือกรอกโค้ดคูปองด้านล่าง'),
             const SizedBox(height: 20),
+            if (onClaim != null) ...[
+              _ClaimCouponBox(onClaim: onClaim!),
+              const SizedBox(height: 20),
+            ],
             if (error != null) Text(error!),
             if (onRefresh != null)
               TextButton(
@@ -66,6 +74,8 @@ class CouponsView extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(coupon.description),
                       const SizedBox(height: 8),
                       Text(
                         coupon.minimumSatang == 0
@@ -77,6 +87,8 @@ class CouponsView extends StatelessWidget {
                             ? 'รออนุมัติรายการ'
                             : coupon.status == 'Used'
                             ? 'ใช้แล้ว'
+                            : coupon.status == 'Expired'
+                            ? 'หมดอายุหรือใช้ไม่ได้แล้ว'
                             : 'ใช้ได้ครั้งเดียว • ใช้ได้ 1 ใบต่อรายการ',
                       ),
                       if (priceSatang != null) ...[
@@ -104,5 +116,70 @@ class CouponsView extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// Text box + button for adding a coupon by its code.
+class _ClaimCouponBox extends StatefulWidget {
+  const _ClaimCouponBox({required this.onClaim});
+  final Future<void> Function(String code) onClaim;
+
+  @override
+  State<_ClaimCouponBox> createState() => _ClaimCouponBoxState();
+}
+
+class _ClaimCouponBoxState extends State<_ClaimCouponBox> {
+  final _controller = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _claim() async {
+    final code = _controller.text.trim();
+    if (code.isEmpty || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onClaim(code);
+      if (!mounted) return;
+      _controller.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เพิ่มคูปอง ${code.toUpperCase()} แล้ว')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: TextField(
+          controller: _controller,
+          enabled: !_busy,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: 'โค้ดคูปอง',
+            hintText: 'เช่น WELCOME10',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (_) => _claim(),
+        ),
+      ),
+      const SizedBox(width: 12),
+      FilledButton(
+        onPressed: _busy ? null : _claim,
+        child: const Text('เพิ่มคูปอง'),
+      ),
+    ],
   );
 }

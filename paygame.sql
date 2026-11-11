@@ -20,13 +20,48 @@ SET time_zone = "+00:00";
 --
 -- Database: `paygame`
 --
--- Includes migrations/001_coupons.sql (user_coupons table + coupon columns on orders).
+-- Coupon design: `coupons` (coupon codes), `user_coupons` (who used which coupon),
+-- and `orders.coupon_id` + `orders.coupon_code_snapshot`.
 -- Importing this file REPLACES the existing tables in `paygame`.
 --
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS `user_coupons`, `receipts`, `point_transactions`, `payments`, `orders`, `packages`, `games`, `users`;
+DROP TABLE IF EXISTS `user_coupons`, `coupons`, `receipts`, `point_transactions`, `payments`, `orders`, `packages`, `games`, `users`;
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `coupons`
+--
+
+CREATE TABLE `coupons` (
+  `coupon_id` int(50) UNSIGNED NOT NULL,
+  `code` varchar(50) NOT NULL,
+  `discount_type` enum('fixed','percent') NOT NULL,
+  `discount_value` decimal(10,2) NOT NULL,
+  `min_order_amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `max_discount_amount` decimal(10,2) DEFAULT NULL,
+  `use_limit` int(50) UNSIGNED DEFAULT NULL,
+  `use_count` int(50) UNSIGNED NOT NULL DEFAULT 0,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coupons`
+-- WELCOME10 / SAVE20P: codes users type in. REWARD*: coupons bought with coins (rewards r1-r4).
+--
+
+INSERT INTO `coupons` (`coupon_id`, `code`, `discount_type`, `discount_value`, `min_order_amount`, `max_discount_amount`, `use_limit`, `use_count`, `start_date`, `end_date`, `is_active`, `created_at`) VALUES
+(1, 'WELCOME10', 'fixed', 10.00, 30.00, NULL, 100, 0, '2026-11-01 00:00:00', '2026-12-31 23:59:59', 1, '2026-11-11 23:00:00'),
+(2, 'SAVE20P', 'percent', 20.00, 100.00, 50.00, 50, 0, '2026-11-01 00:00:00', '2026-12-31 23:59:59', 1, '2026-11-11 23:00:00'),
+(3, 'REWARD20', 'fixed', 20.00, 0.00, NULL, NULL, 0, '2026-01-01 00:00:00', '2030-12-31 23:59:59', 1, '2026-11-11 23:00:00'),
+(4, 'REWARD50', 'fixed', 50.00, 300.00, NULL, NULL, 0, '2026-01-01 00:00:00', '2030-12-31 23:59:59', 1, '2026-11-11 23:00:00'),
+(5, 'REWARD5P', 'percent', 5.00, 0.00, NULL, NULL, 0, '2026-01-01 00:00:00', '2030-12-31 23:59:59', 1, '2026-11-11 23:00:00'),
+(6, 'REWARD150', 'fixed', 150.00, 1000.00, NULL, NULL, 0, '2026-01-01 00:00:00', '2030-12-31 23:59:59', 1, '2026-11-11 23:00:00');
 
 -- --------------------------------------------------------
 
@@ -72,7 +107,8 @@ CREATE TABLE `orders` (
   `status` varchar(100) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `completed_at` datetime DEFAULT NULL,
-  `coupon_id` int(10) UNSIGNED DEFAULT NULL,
+  `coupon_id` int(50) UNSIGNED DEFAULT NULL,
+  `coupon_code_snapshot` varchar(50) DEFAULT NULL,
   `spent_points` int(11) NOT NULL DEFAULT 0,
   `coupon_discount` decimal(10,2) NOT NULL DEFAULT 0.00,
   `fee_amount` decimal(10,2) NOT NULL DEFAULT 0.00
@@ -169,16 +205,10 @@ CREATE TABLE `receipts` (
 --
 
 CREATE TABLE `user_coupons` (
-  `coupon_id` int(10) UNSIGNED NOT NULL,
+  `user_coupon_id` int(50) UNSIGNED NOT NULL,
   `user_id` int(50) UNSIGNED NOT NULL,
-  `reward_id` varchar(20) NOT NULL,
-  `name` varchar(200) NOT NULL,
-  `amount_satang` int(11) NOT NULL DEFAULT 0,
-  `percent` int(11) NOT NULL DEFAULT 0,
-  `minimum_satang` int(11) NOT NULL DEFAULT 0,
-  `status` enum('Available','Reserved','Used') NOT NULL DEFAULT 'Available',
-  `order_id` int(50) UNSIGNED DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+  `coupon_id` int(50) UNSIGNED NOT NULL,
+  `used_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -212,6 +242,13 @@ INSERT INTO `users` (`user_id`, `username`, `password_hash`, `email`, `display_n
 --
 
 --
+-- Indexes for table `coupons`
+--
+ALTER TABLE `coupons`
+  ADD PRIMARY KEY (`coupon_id`),
+  ADD UNIQUE KEY `code` (`code`);
+
+--
 -- Indexes for table `games`
 --
 ALTER TABLE `games`
@@ -223,7 +260,8 @@ ALTER TABLE `games`
 ALTER TABLE `orders`
   ADD PRIMARY KEY (`order_id`),
   ADD KEY `package_id` (`package_id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `coupon_id` (`coupon_id`);
 
 --
 -- Indexes for table `packages`
@@ -261,9 +299,9 @@ ALTER TABLE `receipts`
 -- Indexes for table `user_coupons`
 --
 ALTER TABLE `user_coupons`
-  ADD PRIMARY KEY (`coupon_id`),
-  ADD KEY `user_id` (`user_id`,`status`),
-  ADD KEY `order_id` (`order_id`);
+  ADD PRIMARY KEY (`user_coupon_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `coupon_id` (`coupon_id`);
 
 --
 -- Indexes for table `users`
@@ -275,6 +313,12 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `coupons`
+--
+ALTER TABLE `coupons`
+  MODIFY `coupon_id` int(50) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `games`
@@ -316,7 +360,7 @@ ALTER TABLE `receipts`
 -- AUTO_INCREMENT for table `user_coupons`
 --
 ALTER TABLE `user_coupons`
-  MODIFY `coupon_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `user_coupon_id` int(50) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -333,7 +377,8 @@ ALTER TABLE `users`
 --
 ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `packages` (`package_id`),
-  ADD CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+  ADD CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  ADD CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`coupon_id`);
 
 --
 -- Constraints for table `packages`
@@ -365,7 +410,7 @@ ALTER TABLE `receipts`
 --
 ALTER TABLE `user_coupons`
   ADD CONSTRAINT `user_coupons_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `user_coupons_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`);
+  ADD CONSTRAINT `user_coupons_ibfk_2` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`coupon_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

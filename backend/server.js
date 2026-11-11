@@ -16,6 +16,8 @@ const paymentsRoutes = require('./routes/payments');
 const pointsRoutes = require('./routes/points');
 const receiptsRoutes = require('./routes/receipts');
 const usersRoutes = require('./routes/users');
+const couponsRoutes = require('./routes/coupons');
+const checkoutRoutes = require('./routes/checkout');
 
 // Use Routes
 app.use('/api', authRoutes);
@@ -26,9 +28,8 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/receipts', receiptsRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/coupons', require('./routes/coupons'));
-app.use('/api/checkout', require('./routes/checkout'));
-app.use('/api/admin', require('./routes/admin_reports'));
+app.use('/api/coupons', couponsRoutes);
+app.use('/api/checkout', checkoutRoutes);
 
 // Start Server
 app.listen(3000, () => {

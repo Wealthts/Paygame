@@ -290,9 +290,10 @@ class PaygameController extends ChangeNotifier {
           (row) => CouponModel(
             id: row['coupon_id'].toString(),
             name: row['name'].toString(),
-            amountSatang: row['amount_satang'] as int,
-            percent: row['percent'] as int,
-            minimumSatang: row['minimum_satang'] as int,
+            amountSatang: (row['amount_satang'] as num).toInt(),
+            percent: (row['percent'] as num).toInt(),
+            minimumSatang: (row['minimum_satang'] as num).toInt(),
+            maxDiscountSatang: (row['max_discount_satang'] as num?)?.toInt(),
             status: row['status'].toString(),
           ),
         ),
@@ -313,6 +314,13 @@ class PaygameController extends ChangeNotifier {
       walletError = 'โหลดคูปองและคอยน์ไม่สำเร็จ กรุณาลองใหม่';
     }
     notifyListeners();
+  }
+
+  /// Adds a coupon to the user's wallet by typing its code (e.g. WELCOME10).
+  Future<void> claimCoupon(String code) async {
+    if (authToken == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
+    await ApiService.post('/coupons/claim', {'code': code.trim()});
+    await refreshWallet();
   }
 
   Future<bool> redeemReward(RewardItem reward) async {
