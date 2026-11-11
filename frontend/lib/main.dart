@@ -12,6 +12,7 @@ import 'package:frontend/views/admin/admin_shell_view.dart';
 import 'package:frontend/views/user/paygame_shell_view.dart';
 import 'package:frontend/views/user/purchase_history_view.dart';
 import 'package:frontend/views/user/reward_history_view.dart';
+import 'package:frontend/services/api_service.dart'; // 💡 เพิ่ม import api_service
 
 void main() {
   runApp(
@@ -46,6 +47,32 @@ class GamePayShell extends StatefulWidget {
 class _GamePayShellState extends State<GamePayShell> {
   int currentIndex = 0;
   final List<PaygameOrder> orders = [];
+  bool _isCheckingAuth = true; // 💡 สภาวะกำลังโหลด Token ตอนเปิดแอป
+
+  @override
+  void initState() {
+    super.initState();
+    _checkInitialAuth(); // 💡 โหลด Session เดิมขึ้นมาทันที
+  }
+
+  // 💡 ฟังก์ชัน Auto-Login เพื่อดึง Token เดิม
+  Future<void> _checkInitialAuth() async {
+    try {
+      final token = await ApiService.getToken();
+      if (token != null && token.isNotEmpty && mounted) {
+        // ดึง Token เดิมเข้า Controller
+        await context.read<PaygameController>().tryAutoLogin();
+      }
+    } catch (e) {
+      debugPrint('Auto Login Error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
+    }
+  }
 
   void handlePaymentCompleted(PaygameOrder order) {
     context.read<PaygameController>().refreshWallet();
@@ -108,6 +135,15 @@ class _GamePayShellState extends State<GamePayShell> {
 
   @override
   Widget build(BuildContext context) {
+    // 💡 แสดงหน้าหมุนรอสั้นๆ ขณะดึง Token ก่อนหน้าจอหลักจะขึ้น
+    if (_isCheckingAuth) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFA60C19)),
+        ),
+      );
+    }
+
     final controller = context.watch<PaygameController>();
 
     if (controller.authToken != null && controller.currentRole == 'admin') {
