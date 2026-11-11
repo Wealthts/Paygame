@@ -47,7 +47,7 @@ class PaygameOrder {
   int get totalSatang => priceSatang - discountSatang + feeSatang;
 }
 
-/// Checkout screen for the selected package. Payments are simulated.
+/// Checkout screen that creates a pending order and payment request.
 class PaygamePayment extends StatefulWidget {
   const PaygamePayment({
     super.key,
@@ -356,7 +356,7 @@ class _PaygamePaymentState extends State<PaygamePayment> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final success = await showDialog<bool>(
+      final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('ยืนยันบัญชีที่จะเติม'),
@@ -372,9 +372,7 @@ class _PaygamePaymentState extends State<PaygamePayment> {
                 if (_game.requiresServer) Text('เซิร์ฟเวอร์ $_server'),
                 Text('ยอดชำระ ${_money(_total)}'),
                 const SizedBox(height: 16),
-                const Text(
-                  'นี่คือการทดลองชำระเงิน เลือกผลลัพธ์เพื่อดูหน้าจอถัดไป',
-                ),
+                const Text('รายการจะถูกส่งให้ผู้ดูแลระบบตรวจสอบและอนุมัติ'),
               ],
             ),
           ),
@@ -383,24 +381,31 @@ class _PaygamePaymentState extends State<PaygamePayment> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('กลับไปตรวจสอบ'),
             ),
-            OutlinedButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('จำลองชำระไม่สำเร็จ'),
-            ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('จำลองชำระสำเร็จ'),
+              child: const Text('ส่งคำขอชำระเงิน'),
             ),
           ],
         ),
       );
-      if (!mounted || success == null) return;
-      final earned = success ? _earned : 0;
-      final balance = success
-          ? _points - (_saving > 0 ? 100 : 0) + earned
-          : _points;
+      if (!mounted || confirmed != true) return;
+      if (_pack.packageId <= 0) {
+        throw Exception('This package is not available for purchase yet');
+      }
+
+      final orderResponse = await OrderService.create(
+        packageId: _pack.packageId,
+        playerUid: widget.uid,
+        serverCode: _game.requiresServer ? _server : null,
+      );
+      final orderId = int.tryParse(orderResponse['order_id'].toString());
+      if (orderId == null) throw Exception('Invalid order ID');
+
+      await PaymentService.create(orderId: orderId, method: _method.name);
+
+      if (!mounted) return;
       final order = PaygameOrder(
-        id: 'GP-${DateTime.now().microsecondsSinceEpoch}',
+        id: 'GP-$orderId',
         game: _game,
         pack: _pack,
         uid: widget.uid,
@@ -409,32 +414,24 @@ class _PaygamePaymentState extends State<PaygamePayment> {
         priceSatang: _price,
         discountSatang: _saving,
         feeSatang: _fee,
-        success: success,
-        earnedPoints: earned,
-        pointsBalance: balance,
+        success: false,
+        earnedPoints: 0,
+        pointsBalance: _points,
         createdAt: DateTime.now(),
       );
       setState(() {
-        _points = balance;
-        if (success) {
-          _discount = false;
-        }
+        _discount = false;
       });
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           icon: Icon(
-            success ? Icons.check_circle_outline : Icons.error_outline,
-            color: success ? const Color(0xFF16754D) : _red,
+            Icons.schedule_outlined,
+            color: const Color(0xFF986C0A),
             size: 48,
           ),
-          title: Text(success ? 'เติมเกมสำเร็จ! (จำลอง)' : 'ชำระเงินไม่สำเร็จ'),
-          content: Text(
-            success
-                ? 'คำสั่งซื้อ ${order.id}\nUID ${order.uid}\nยอดชำระ ${_money(order.totalSatang)}'
-                      '\nได้รับ +$earned แต้ม\nแต้มคงเหลือ ${_number(balance)} แต้ม'
-                : 'ไม่มีการหักเงินหรือแต้ม คุณสามารถลองทำรายการใหม่ได้',
-          ),
+          title: const Text('ส่งคำขอชำระเงินแล้ว'),
+          content: Text('คำสั่งซื้อ ${order.id}\nUID ${order.uid}\nยอดชำระ ${_money(order.totalSatang)}\nสถานะ: รอผู้ดูแลอนุมัติ'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -444,8 +441,13 @@ class _PaygamePaymentState extends State<PaygamePayment> {
         ),
       );
       if (!mounted) return;
-      if (success) Navigator.of(context).pop();
       widget.onPaymentCompleted?.call(order);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

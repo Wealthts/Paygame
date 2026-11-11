@@ -460,7 +460,9 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: isLoadingGames || isLoadingPackages ? null : loadGames,
+            onPressed: isLoadingGames || isLoadingPackages || isSaving
+                ? null
+                : loadGames,
             icon: const Icon(Icons.refresh),
           ),
         ],

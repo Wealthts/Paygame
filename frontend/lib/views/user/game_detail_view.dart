@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/services/order_service.dart';
+import 'package:frontend/services/payment_service.dart';
+import 'package:frontend/services/game_service.dart';
+import 'package:frontend/services/package_service.dart';
 
 part 'payment_view.dart';
 
@@ -10,9 +14,10 @@ void main() => runApp(
 );
 
 class PaygamePack {
-  const PaygamePack(this.quantity, this.price, {this.enabled = true});
+  const PaygamePack(this.quantity, this.price, {this.packageId = 0, this.enabled = true});
   final int quantity;
   final int price;
+  final int packageId;
   final bool enabled;
 }
 
@@ -105,6 +110,8 @@ class _PaygamePackageState extends State<PaygamePackage> {
   late int _points;
   int _selected = 3;
   String _server = 'Asia';
+  bool _catalogLoading = true;
+  String? _catalogError;
 
   PaygamePack get _pack => _game.packs[_selected];
   int get _price => _pack.price * 100;
@@ -121,6 +128,48 @@ class _PaygamePackageState extends State<PaygamePackage> {
     _selected = _game.packs.length > 3 && _game.packs[3].enabled
         ? 3
         : _game.packs.indexWhere((p) => p.enabled);
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    try {
+      final games = await GameService.getActiveGames();
+      final game = games.where((item) => item.gameId == widget.gameId).firstOrNull;
+      if (game == null) throw Exception('Game not found');
+      final packages = await PackageService.getActivePackages(game.gameId);
+      if (!mounted) return;
+      setState(() {
+        _game = PaygameGame(
+          game.gameName,
+          game.unit.isEmpty ? 'หน่วย' : game.unit,
+          packages
+              .map(
+                (item) => PaygamePack(
+                  _packageQuantity(item.packageName),
+                  item.price.round(),
+                  packageId: item.packageId,
+                  enabled: item.isActive,
+                ),
+              )
+              .toList(),
+          requiresServer: game.requiresServer,
+        );
+        _selected = _game.packs.indexWhere((item) => item.enabled);
+        _catalogLoading = false;
+        _catalogError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _catalogLoading = false;
+        _catalogError = error.toString();
+      });
+    }
+  }
+
+  int _packageQuantity(String value) {
+    final match = RegExp(r'\d+').firstMatch(value);
+    return int.tryParse(match?.group(0) ?? '') ?? 0;
   }
 
   @override
@@ -227,7 +276,11 @@ class _PaygamePackageState extends State<PaygamePackage> {
                     child: SingleChildScrollView(
                       controller: _scroll,
                       padding: const EdgeInsets.all(20),
-                      child: _selected < 0
+                      child: _catalogLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _catalogError != null
+                          ? Text(_catalogError!)
+                          : _selected < 0
                           ? const Text('ยังไม่มีแพ็กเกจที่เปิดขาย')
                           : _packagePage(),
                     ),
@@ -237,7 +290,9 @@ class _PaygamePackageState extends State<PaygamePackage> {
             ),
           ),
         ),
-        bottomNavigationBar: _selected < 0 ? null : _bottomAction(),
+        bottomNavigationBar: _catalogLoading || _catalogError != null || _selected < 0
+            ? null
+            : _bottomAction(),
       ),
     );
   }

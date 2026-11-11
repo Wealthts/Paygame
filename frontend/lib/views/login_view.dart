@@ -3,12 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:frontend/controllers/paygame_controller.dart';
 import 'package:frontend/views/register_view.dart';
 import 'package:frontend/views/forget_view.dart';
-import 'package:frontend/views/admin/admin_shell_view.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
-  const LoginScreen({Key? key, this.onLoginSuccess})
-    : super(key: key ?? const Key('login_screen'));
+
+  const LoginScreen({super.key, this.onLoginSuccess});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -55,40 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final controller = context.read<PaygameController>();
       await controller.login(username, password);
+
+      widget.onLoginSuccess?.call();
+
       if (!mounted) return;
-
-      // Admin Navigation
-
-      // Admin Navigation
-      if (controller.currentRole == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AdminShellView(
-              onLogout: () async {
-                final paygameController = context.read<PaygameController>();
-
-                await paygameController.logout();
-
-                if (!mounted) return;
-
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-          ),
-        );
-      } else {
-        // User Navigation
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Login successful")));
-
-        widget.onLoginSuccess?.call();
-      }
     } catch (e) {
       if (!mounted) return;
 

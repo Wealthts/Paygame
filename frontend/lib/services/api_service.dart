@@ -5,7 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  // Override for a phone or a deployed server, e.g.
+  // --dart-define=API_BASE_URL=http://192.168.1.10:3000/api
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:3000/api',
+  );
   // Request Timeout
   static const Duration timeoutDuration = Duration(seconds: 15);
   // Secure Storage

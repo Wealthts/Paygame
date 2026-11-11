@@ -5,7 +5,7 @@ const { verifyToken, verifyAdmin } = require('../middleware/auth');
 const router = express.Router();
 
 // get all order of user
-router.get('/', verifyToken, verifyAdmin, (req, res) => {
+router.get('/', verifyToken, (req, res) => {
     const user_id = req.user.id;
     let values = [];
     let sql = "SELECT * FROM orders ";

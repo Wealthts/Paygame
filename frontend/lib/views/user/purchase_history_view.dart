@@ -1,45 +1,61 @@
 import 'package:flutter/material.dart';
 
 import 'game_detail_view.dart';
-import 'receipt_view.dart';
+import 'package:frontend/services/order_service.dart';
 
-class PurchaseHistoryView extends StatelessWidget {
+class PurchaseHistoryView extends StatefulWidget {
   const PurchaseHistoryView({super.key, required this.orders});
 
   final List<PaygameOrder> orders;
 
   @override
+  State<PurchaseHistoryView> createState() => _PurchaseHistoryViewState();
+}
+
+class _PurchaseHistoryViewState extends State<PurchaseHistoryView> {
+  Future<List<Map<String, dynamic>>>? _orders;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() => setState(() => _orders = OrderService.list());
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ประวัติการซื้อ')),
-      body: orders.isEmpty
-          ? const Center(child: Text('ยังไม่มีรายการซื้อ'))
-          : ListView.builder(
+      appBar: AppBar(title: const Text('ประวัติการซื้อ'), actions: [IconButton(onPressed: _reload, icon: const Icon(Icons.refresh))]),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _orders,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Text('${snapshot.error}'));
+          final orders = snapshot.data ?? [];
+          if (orders.isEmpty) return const Center(child: Text('ยังไม่มีรายการซื้อ'));
+          return ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
-                final date = order.createdAt;
                 return Card(
                   child: ListTile(
                     title: Text(
-                      '${order.game.name} · ${order.pack.quantity} ${order.game.unit}',
+                      '${order['game_name_snapshot']} · ${order['package_name_snapshot']}',
                     ),
                     subtitle: Text(
-                      '${date.day}/${date.month}/${date.year + 543} · ${order.id}\n'
-                      'ชำระ ฿${(order.totalSatang / 100).toStringAsFixed(2)} · ได้รับ ${order.earnedPoints} แต้ม',
+                      'คำสั่งซื้อ GP-${order['order_id']}\n'
+                      'ชำระ ฿${order['total_amount']} · สถานะ ${order['status']}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => ReceiptScreen(order: order),
-                      ),
-                    ),
+                    isThreeLine: true,
+                    trailing: Text('${order['status']}'),
                   ),
                 );
               },
-            ),
+            );
+        },
+      ),
     );
   }
 }

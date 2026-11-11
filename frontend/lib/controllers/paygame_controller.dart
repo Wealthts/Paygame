@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/paygame_models.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/game_service.dart';
 
 class PaygameController extends ChangeNotifier {
+  PaygameController() {
+    loadCatalog();
+  }
+
   String? authToken;
   String currentRole = 'user';
   String currentUsername = '';
@@ -179,6 +184,15 @@ class PaygameController extends ChangeNotifier {
       isEarned: true,
     ),
   ];
+
+  Future<void> loadCatalog() async {
+    try {
+      games = await GameService.getActiveGames();
+      notifyListeners();
+    } catch (_) {
+      // Keep the existing catalogue visible when the server is offline.
+    }
+  }
 
   // Login with backend
   Future<void> login(String username, String password) async {

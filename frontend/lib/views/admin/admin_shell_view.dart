@@ -20,9 +20,9 @@ class AdminShellView extends StatefulWidget {
 
 class _AdminShellViewState extends State<AdminShellView> {
   int currentIndex = 0;
+  bool isLoggingOut = false;
 
   static const Color primaryColor = Color(0xFFA60C19);
-  static const Color goldColor = Color(0xFFD4AF37);
 
   final List<Widget> pages = const [
     AdminDashboardView(),
@@ -85,10 +85,15 @@ class _AdminShellViewState extends State<AdminShellView> {
   }
 
   Future<void> handleLogout() async {
-    if (widget.onLogout == null) return;
+    if (widget.onLogout == null || isLoggingOut) return;
+
+    setState(() {
+      isLoggingOut = true;
+    });
 
     try {
       await widget.onLogout!();
+      if (!mounted) return;
     } catch (e) {
       if (!mounted) return;
 
@@ -98,6 +103,10 @@ class _AdminShellViewState extends State<AdminShellView> {
           backgroundColor: Colors.red,
         ),
       );
+
+      setState(() {
+        isLoggingOut = false;
+      });
     }
   }
 
@@ -168,7 +177,7 @@ class _AdminShellViewState extends State<AdminShellView> {
                           child: IconButton(
                             tooltip: 'Logout',
                             icon: const Icon(Icons.logout, color: primaryColor),
-                            onPressed: handleLogout,
+                            onPressed: isLoggingOut ? null : handleLogout,
                           ),
                         ),
                       ),
@@ -193,7 +202,7 @@ class _AdminShellViewState extends State<AdminShellView> {
         return Scaffold(
           body: IndexedStack(index: currentIndex, children: pages),
           floatingActionButton: FloatingActionButton(
-            onPressed: handleLogout,
+            onPressed: isLoggingOut ? null : handleLogout,
             backgroundColor: primaryColor,
             tooltip: 'Logout',
             child: const Icon(Icons.logout, color: Colors.white),

@@ -12,11 +12,11 @@ class AdminGamesView extends StatefulWidget {
 
 class _AdminGamesViewState extends State<AdminGamesView> {
   static const Color red = Color(0xFFA60C19);
-  static const Color gold = Color(0xFFD4AF37);
 
   List<GameModel> games = [];
 
   bool isLoading = false;
+  bool isSaving = false;
   String? errorMessage;
 
   @override
@@ -53,6 +53,8 @@ class _AdminGamesViewState extends State<AdminGamesView> {
 
   // Show message
   void showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -223,21 +225,33 @@ class _AdminGamesViewState extends State<AdminGamesView> {
     categoryController.dispose();
     patternController.dispose();
 
-    if (result == null) return;
+    if (!mounted || result == null || isSaving) return;
+
+    setState(() {
+      isSaving = true;
+    });
 
     try {
       if (isEditing) {
         await GameService.updateGame(result);
-        showMessage('Game updated successfully');
       } else {
         await GameService.addGame(result);
-        showMessage('Game added successfully');
       }
+
+      if (!mounted) return;
+      showMessage(
+        isEditing ? 'Game updated successfully' : 'Game added successfully',
+      );
 
       await loadGames();
     } catch (e) {
-      if (!mounted) return;
       showMessage(e.toString(), isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
     }
   }
 
@@ -269,7 +283,11 @@ class _AdminGamesViewState extends State<AdminGamesView> {
       },
     );
 
-    if (confirm != true) return;
+    if (!mounted || confirm != true || isSaving) return;
+
+    setState(() {
+      isSaving = true;
+    });
 
     try {
       await GameService.deleteGame(game.gameId);
@@ -280,8 +298,13 @@ class _AdminGamesViewState extends State<AdminGamesView> {
 
       await loadGames();
     } catch (e) {
-      if (!mounted) return;
       showMessage(e.toString(), isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
     }
   }
 
@@ -390,9 +413,11 @@ class _AdminGamesViewState extends State<AdminGamesView> {
               children: [
                 // Edit Button
                 TextButton.icon(
-                  onPressed: () {
-                    showGameDialog(game: game);
-                  },
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          showGameDialog(game: game);
+                        },
                   icon: const Icon(Icons.edit_outlined),
                   label: const Text('Edit'),
                   style: TextButton.styleFrom(foregroundColor: red),
@@ -401,9 +426,11 @@ class _AdminGamesViewState extends State<AdminGamesView> {
                 // Deactivate Button
                 if (game.isActive)
                   TextButton.icon(
-                    onPressed: () {
-                      deleteGame(game);
-                    },
+                    onPressed: isSaving
+                        ? null
+                        : () {
+                            deleteGame(game);
+                          },
                     icon: const Icon(Icons.block),
                     label: const Text('Deactivate'),
                     style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -433,7 +460,7 @@ class _AdminGamesViewState extends State<AdminGamesView> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            onPressed: loadGames,
+            onPressed: isLoading || isSaving ? null : loadGames,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
           ),
@@ -441,9 +468,11 @@ class _AdminGamesViewState extends State<AdminGamesView> {
       ),
 
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showGameDialog();
-        },
+        onPressed: isSaving
+            ? null
+            : () {
+                showGameDialog();
+              },
         backgroundColor: red,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
