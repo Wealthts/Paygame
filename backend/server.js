@@ -26,8 +26,8 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/receipts', receiptsRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/coupons', require('./routes/coupons'));
-app.use('/api/checkout', require('./routes/checkout'));
+// app.use('/api/coupons', require('./routes/coupons'));
+// app.use('/api/checkout', require('./routes/checkout'));
 
 // Start Server
 app.listen(3000, () => {
