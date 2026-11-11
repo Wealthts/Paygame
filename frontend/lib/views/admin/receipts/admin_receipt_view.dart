@@ -1,37 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:frontend/services/admin_report_service.dart';
 import 'package:frontend/theme/app_colors.dart';
 import 'package:frontend/views/user/receipt_detail.dart';
-
-/// Receipt row (based on receipts JOIN orders, users, payments)
-/// Mock data for now, not connected to the API yet
-class AdminReceiptItem {
-  final String receiptNumber;
-  final int orderId;
-  final String username;
-  final String gameName;
-  final String packageName;
-  final String playerUid;
-  final String method;
-  final double originalPrice;
-  final double discountAmount;
-  final double totalAmount;
-  final DateTime issuedAt;
-
-  const AdminReceiptItem({
-    required this.receiptNumber,
-    required this.orderId,
-    required this.username,
-    required this.gameName,
-    required this.packageName,
-    required this.playerUid,
-    required this.method,
-    required this.originalPrice,
-    required this.discountAmount,
-    required this.totalAmount,
-    required this.issuedAt,
-  });
-}
 
 class AdminReceiptsView extends StatefulWidget {
   const AdminReceiptsView({super.key});
@@ -44,60 +15,15 @@ class _AdminReceiptsViewState extends State<AdminReceiptsView> {
   final TextEditingController _searchController = TextEditingController();
   String _range = 'All';
 
-  static final List<AdminReceiptItem> _receipts = [
-    AdminReceiptItem(
-      receiptNumber: 'GP-20261111-0006',
-      orderId: 6,
-      username: 'Napat',
-      gameName: 'ROV',
-      packageName: '400 Coupons',
-      playerUid: '1234567890',
-      method: 'PromptPay QR',
-      originalPrice: 350,
-      discountAmount: 10,
-      totalAmount: 340,
-      issuedAt: DateTime(2026, 11, 11, 22, 41),
-    ),
-    AdminReceiptItem(
-      receiptNumber: 'GP-20261111-0005',
-      orderId: 5,
-      username: 'Chalisa',
-      gameName: 'Free Fire',
-      packageName: '520 Diamonds',
-      playerUid: '9876543210',
-      method: 'e-Wallet',
-      originalPrice: 199,
-      discountAmount: 0,
-      totalAmount: 201,
-      issuedAt: DateTime(2026, 11, 11, 18, 5),
-    ),
-    AdminReceiptItem(
-      receiptNumber: 'GP-20261110-0004',
-      orderId: 4,
-      username: 'Natthawat',
-      gameName: 'Genshin Impact',
-      packageName: '300 Crystals',
-      playerUid: '800123456',
-      method: 'PromptPay QR',
-      originalPrice: 179,
-      discountAmount: 20,
-      totalAmount: 159,
-      issuedAt: DateTime(2026, 11, 10, 20, 11),
-    ),
-    AdminReceiptItem(
-      receiptNumber: 'GP-20261108-0002',
-      orderId: 2,
-      username: 'Napat',
-      gameName: 'ROV',
-      packageName: '90 Coupons',
-      playerUid: '1234567890',
-      method: 'Credit Card',
-      originalPrice: 79,
-      discountAmount: 0,
-      totalAmount: 81,
-      issuedAt: DateTime(2026, 11, 8, 9, 30),
-    ),
-  ];
+  List<AdminReceiptItem> _receipts = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -105,14 +31,49 @@ class _AdminReceiptsViewState extends State<AdminReceiptsView> {
     super.dispose();
   }
 
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await AdminReportService.fetchReceipts();
+      if (!mounted) return;
+      setState(() {
+        _receipts = data;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _loading = false;
+      });
+    }
+  }
+
+  bool _inRange(DateTime d) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    switch (_range) {
+      case 'Today':
+        return !d.isBefore(today);
+      case 'Last 7 days':
+        return !d.isBefore(today.subtract(const Duration(days: 6)));
+      default:
+        return true;
+    }
+  }
+
   List<AdminReceiptItem> get _filtered {
     final q = _searchController.text.trim().toLowerCase();
-    if (q.isEmpty) return _receipts;
     return _receipts.where((r) {
-      return r.receiptNumber.toLowerCase().contains(q) ||
+      final matchSearch = q.isEmpty ||
+          r.receiptNumber.toLowerCase().contains(q) ||
           r.username.toLowerCase().contains(q) ||
-          r.playerUid.contains(q) ||
+          r.playerUid.toLowerCase().contains(q) ||
           r.gameName.toLowerCase().contains(q);
+      return matchSearch && _inRange(r.issuedAt);
     }).toList();
   }
 
@@ -130,13 +91,45 @@ class _AdminReceiptsViewState extends State<AdminReceiptsView> {
 
   @override
   Widget build(BuildContext context) {
-    final items = _filtered;
-    final total = _receipts.fold<double>(0, (s, r) => s + r.totalAmount);
-
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(title: const Text('Receipts')),
-      body: ListView(
+      appBar: AppBar(
+        title: const Text('Receipts'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _load,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    }
+    if (_error != null) {
+      return _ErrorState(message: _error!, onRetry: _load);
+    }
+
+    final items = _filtered;
+    final total = _receipts.fold<double>(0, (s, r) => s + r.totalAmount);
+    final now = DateTime.now();
+    final todayCount = _receipts
+        .where((r) =>
+            r.issuedAt.year == now.year &&
+            r.issuedAt.month == now.month &&
+            r.issuedAt.day == now.day)
+        .length;
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: AppColors.red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           // ---------- Summary ----------
@@ -156,10 +149,10 @@ class _AdminReceiptsViewState extends State<AdminReceiptsView> {
                 value: _baht(total),
                 color: AppColors.success,
               ),
-              const _StatCard(
+              _StatCard(
                 icon: Icons.today_outlined,
                 label: 'Issued today',
-                value: '2',
+                value: '$todayCount',
                 color: AppColors.goldText,
               ),
             ],
@@ -213,7 +206,11 @@ class _AdminReceiptsViewState extends State<AdminReceiptsView> {
           ),
           const SizedBox(height: 10),
           if (items.isEmpty)
-            const _EmptyState(text: 'No receipts found')
+            _EmptyState(
+              text: _receipts.isEmpty
+                  ? 'No receipts yet. Receipts appear after an admin approves a payment.'
+                  : 'No receipts found',
+            )
           else
             for (final r in items) ...[
               _ReceiptTile(receipt: r, onTap: () => _openReceipt(r)),
@@ -291,7 +288,7 @@ class _ReceiptTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const _Pill(text: 'PAID', fg: AppColors.success, bg: AppColors.successBg),
+                  _StatusPill(status: r.paymentStatus),
                 ],
               ),
               const SizedBox(width: 4),
@@ -315,7 +312,7 @@ class _ReceiptPreviewSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = receipt;
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -341,9 +338,9 @@ class _ReceiptPreviewSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Text.rich(
+                      const Text.rich(
                         TextSpan(
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                           children: [
@@ -353,54 +350,29 @@ class _ReceiptPreviewSheet extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Spacer(),
-                      _Pill(text: 'PAID', fg: AppColors.success, bg: AppColors.successBg),
+                      const Spacer(),
+                      _StatusPill(status: r.paymentStatus),
                     ],
                   ),
                   const DashedDivider(),
                   _Line('Receipt no.', r.receiptNumber, bold: true),
                   _Line('Order', '#${r.orderId}'),
-                  _Line('User', r.username),
+                  _Line('User', '${r.displayName} (@${r.username})'),
                   _Line('Issued at', _formatDate(r.issuedAt)),
                   _Line('Game', r.gameName),
                   _Line('Package', r.packageName),
                   _Line('UID', r.playerUid, bold: true),
-                  _Line('Method', r.method),
+                  if (r.serverCode != null) _Line('Server', r.serverCode!),
+                  _Line('Method', _methodLabel(r.method)),
                   const DashedDivider(),
                   _Line('Price', _baht(r.originalPrice)),
+                  if (r.couponCode != null) _Line('Coupon', r.couponCode!),
+                  if (r.spentPoints > 0) _Line('Points used', '${r.spentPoints} pts'),
                   _Line('Discount', '−${_baht(r.discountAmount)}', color: AppColors.red),
+                  _Line('Fee', _baht(r.feeAmount)),
                   _Line('Total paid', _baht(r.totalAmount), bold: true, color: AppColors.red),
                 ],
               ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.print_outlined),
-                    label: const Text('Print'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.red,
-                      side: const BorderSide(color: AppColors.red),
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.download_outlined),
-                    label: const Text('Download PDF'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.red,
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -458,20 +430,26 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  final String text;
-  final Color fg;
-  final Color bg;
-  const _Pill({required this.text, required this.fg, required this.bg});
+class _StatusPill extends StatelessWidget {
+  final String status;
+  const _StatusPill({required this.status});
 
   @override
   Widget build(BuildContext context) {
+    final paid = status.toLowerCase() == 'paid';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(
+        color: paid ? AppColors.successBg : AppColors.creamDeep,
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Text(
-        text,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+        status.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: paid ? AppColors.success : AppColors.goldText,
+        ),
       ),
     );
   }
@@ -520,10 +498,53 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
         children: [
-          const Icon(Icons.search_off, size: 48, color: AppColors.inkMuted),
+          const Icon(Icons.receipt_long_outlined, size: 48, color: AppColors.inkMuted),
           const SizedBox(height: 8),
-          Text(text, style: const TextStyle(color: AppColors.inkMuted)),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.inkMuted),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off, size: 48, color: AppColors.danger),
+            const SizedBox(height: 8),
+            const Text(
+              'Could not load receipts',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.inkMuted),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.red),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -533,13 +554,25 @@ class _EmptyState extends StatelessWidget {
 // Formatting helpers
 // ======================================================================
 String _baht(double v) {
-  final s = v.toStringAsFixed(2);
-  final parts = s.split('.');
+  final parts = v.toStringAsFixed(2).split('.');
   final whole = parts[0].replaceAllMapped(
     RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
     (m) => '${m[1]},',
   );
   return '฿$whole.${parts[1]}';
+}
+
+String _methodLabel(String method) {
+  switch (method.toLowerCase()) {
+    case 'qr':
+      return 'PromptPay QR';
+    case 'wallet':
+      return 'e-Wallet';
+    case 'card':
+      return 'Credit / Debit card';
+    default:
+      return method;
+  }
 }
 
 String _formatDate(DateTime d) {

@@ -1,42 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:frontend/services/admin_report_service.dart';
 import 'package:frontend/theme/app_colors.dart';
-
-/// Per-user point balance (SUM(points_delta) from point_transactions)
-class AdminPointBalance {
-  final String username;
-  final String displayName;
-  final int balance;
-  final int earnedTotal;
-
-  const AdminPointBalance({
-    required this.username,
-    required this.displayName,
-    required this.balance,
-    required this.earnedTotal,
-  });
-}
-
-/// Single point transaction (based on point_transactions)
-class AdminPointTx {
-  final int id;
-  final String username;
-  final int? orderId;
-  final String type; // earn | redeem | adjust
-  final int pointsDelta;
-  final String note;
-  final DateTime createdAt;
-
-  const AdminPointTx({
-    required this.id,
-    required this.username,
-    required this.orderId,
-    required this.type,
-    required this.pointsDelta,
-    required this.note,
-    required this.createdAt,
-  });
-}
 
 class AdminPointsView extends StatefulWidget {
   const AdminPointsView({super.key});
@@ -49,60 +14,25 @@ class _AdminPointsViewState extends State<AdminPointsView> {
   final TextEditingController _searchController = TextEditingController();
   String _typeFilter = 'all';
 
-  // ---------- Mock data (not connected to the API yet) ----------
-  static const List<AdminPointBalance> _balances = [
-    AdminPointBalance(username: 'Napat', displayName: 'Mocha', balance: 1184, earnedTotal: 1284),
-    AdminPointBalance(username: 'Chalisa', displayName: 'Film', balance: 420, earnedTotal: 470),
-    AdminPointBalance(username: 'Natthawat', displayName: 'Test User', balance: 65, earnedTotal: 265),
+  List<AdminPointBalance> _balances = [];
+  List<AdminPointTx> _transactions = [];
+  bool _loading = true;
+  String? _error;
+
+  // value used in point_transactions.type -> chip label
+  static const List<(String, String)> _filters = [
+    ('all', 'All'),
+    ('earn', 'Earn'),
+    ('spend', 'Spend'),
+    ('redeem', 'Redeem'),
+    ('refund', 'Refund'),
   ];
 
-  static final List<AdminPointTx> _transactions = [
-    AdminPointTx(
-      id: 9,
-      username: 'Napat',
-      orderId: 6,
-      type: 'earn',
-      pointsDelta: 34,
-      note: 'Top-up ROV 400 Coupons',
-      createdAt: DateTime(2026, 11, 11, 22, 41),
-    ),
-    AdminPointTx(
-      id: 8,
-      username: 'Napat',
-      orderId: 6,
-      type: 'redeem',
-      pointsDelta: -100,
-      note: 'Used as discount',
-      createdAt: DateTime(2026, 11, 11, 22, 40),
-    ),
-    AdminPointTx(
-      id: 7,
-      username: 'Chalisa',
-      orderId: 5,
-      type: 'earn',
-      pointsDelta: 20,
-      note: 'Top-up Free Fire 520 Diamonds',
-      createdAt: DateTime(2026, 11, 11, 18, 5),
-    ),
-    AdminPointTx(
-      id: 6,
-      username: 'Natthawat',
-      orderId: null,
-      type: 'redeem',
-      pointsDelta: -200,
-      note: 'Redeemed coupon REWARD20',
-      createdAt: DateTime(2026, 11, 10, 21, 0),
-    ),
-    AdminPointTx(
-      id: 5,
-      username: 'Chalisa',
-      orderId: null,
-      type: 'adjust',
-      pointsDelta: 50,
-      note: 'Sign-up bonus',
-      createdAt: DateTime(2026, 11, 9, 10, 0),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -110,10 +40,35 @@ class _AdminPointsViewState extends State<AdminPointsView> {
     super.dispose();
   }
 
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final results = await Future.wait([
+        AdminReportService.fetchPointBalances(),
+        AdminReportService.fetchPointHistory(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _balances = results[0] as List<AdminPointBalance>;
+        _transactions = results[1] as List<AdminPointTx>;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _loading = false;
+      });
+    }
+  }
+
   List<AdminPointTx> get _filteredTx {
     final q = _searchController.text.trim().toLowerCase();
     return _transactions.where((t) {
-      final matchType = _typeFilter == 'all' || t.type == _typeFilter;
+      final matchType = _typeFilter == 'all' || t.type.toLowerCase() == _typeFilter;
       final matchSearch = q.isEmpty ||
           t.username.toLowerCase().contains(q) ||
           t.note.toLowerCase().contains(q) ||
@@ -124,27 +79,54 @@ class _AdminPointsViewState extends State<AdminPointsView> {
 
   @override
   Widget build(BuildContext context) {
-    final earned = _transactions
-        .where((t) => t.pointsDelta > 0)
-        .fold<int>(0, (s, t) => s + t.pointsDelta);
-    final spent = _transactions
-        .where((t) => t.pointsDelta < 0)
-        .fold<int>(0, (s, t) => s - t.pointsDelta);
-    final inSystem = _balances.fold<int>(0, (s, b) => s + b.balance);
-    final txs = _filteredTx;
-
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(title: const Text('Points')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: AppColors.gold,
-        foregroundColor: AppColors.goldInk,
-        icon: const Icon(Icons.tune),
-        label: const Text('Adjust points'),
+      appBar: AppBar(
+        title: const Text('Points'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _load,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    }
+    if (_error != null) {
+      return _ErrorState(message: _error!, onRetry: _load);
+    }
+
+    // Summary numbers all come from point_transactions, so they always add up:
+    // Outstanding = Issued - Spent
+    var issued = 0;
+    var spent = 0;
+    var refunded = 0;
+    for (final t in _transactions) {
+      if (t.type.toLowerCase() == 'refund') {
+        refunded += t.pointsDelta;
+      } else if (t.pointsDelta > 0) {
+        issued += t.pointsDelta;
+      } else {
+        spent -= t.pointsDelta;
+      }
+    }
+    spent -= refunded; // refunded points were given back, so they are not "spent"
+    final outstanding = issued - spent;
+    final txs = _filteredTx;
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: AppColors.red,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
         children: [
           // ---------- Summary ----------
           Wrap(
@@ -154,7 +136,7 @@ class _AdminPointsViewState extends State<AdminPointsView> {
               _StatCard(
                 icon: Icons.add_circle_outline,
                 label: 'Points issued',
-                value: _num(earned),
+                value: _num(issued),
                 color: AppColors.success,
               ),
               _StatCard(
@@ -166,7 +148,7 @@ class _AdminPointsViewState extends State<AdminPointsView> {
               _StatCard(
                 icon: Icons.stars_rounded,
                 label: 'Outstanding points',
-                value: _num(inSystem),
+                value: _num(outstanding),
                 color: AppColors.goldText,
               ),
             ],
@@ -176,22 +158,25 @@ class _AdminPointsViewState extends State<AdminPointsView> {
           // ---------- User balances ----------
           const _SectionTitle(icon: Icons.leaderboard_outlined, text: 'User balances'),
           const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
+          if (_balances.isEmpty)
+            const _EmptyBox(text: 'No users yet')
+          else
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < _balances.length; i++)
+                    _BalanceRow(
+                      rank: i + 1,
+                      item: _balances[i],
+                      showDivider: i != _balances.length - 1,
+                    ),
+                ],
+              ),
             ),
-            child: Column(
-              children: [
-                for (var i = 0; i < _balances.length; i++)
-                  _BalanceRow(
-                    rank: i + 1,
-                    item: _balances[i],
-                    showDivider: i != _balances.length - 1,
-                  ),
-              ],
-            ),
-          ),
           const SizedBox(height: 24),
 
           // ---------- Point transactions ----------
@@ -218,13 +203,9 @@ class _AdminPointsViewState extends State<AdminPointsView> {
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
-              for (final f in const [
-                ('all', 'All'),
-                ('earn', 'Earned'),
-                ('redeem', 'Spent'),
-                ('adjust', 'Admin adjust'),
-              ])
+              for (final f in _filters)
                 ChoiceChip(
                   label: Text(f.$2),
                   selected: _typeFilter == f.$1,
@@ -241,11 +222,8 @@ class _AdminPointsViewState extends State<AdminPointsView> {
           ),
           const SizedBox(height: 12),
           if (txs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text('No transactions found', style: TextStyle(color: AppColors.inkMuted)),
-              ),
+            _EmptyBox(
+              text: _transactions.isEmpty ? 'No point transactions yet' : 'No transactions found',
             )
           else
             for (final t in txs) ...[
@@ -270,7 +248,8 @@ class _BalanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTop = rank == 1;
+    final isTop = rank == 1 && item.balance > 0;
+    final name = item.displayName.isEmpty ? item.username : item.displayName;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -296,7 +275,7 @@ class _BalanceRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
                 Text(
                   '@${item.username} · Lifetime ${_num(item.earnedTotal)} pts',
                   style: const TextStyle(fontSize: 12, color: AppColors.inkMuted),
@@ -332,10 +311,12 @@ class _TxTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = tx.pointsDelta >= 0;
-    final (IconData icon, String label, Color fg, Color bg) = switch (tx.type) {
-      'earn' => (Icons.arrow_downward_rounded, 'Earned', AppColors.success, AppColors.successBg),
-      'redeem' => (Icons.arrow_upward_rounded, 'Spent', AppColors.danger, AppColors.dangerBg),
-      _ => (Icons.tune, 'Admin adjust', AppColors.goldText, AppColors.creamDeep),
+    final (IconData icon, Color fg, Color bg) = switch (tx.type.toLowerCase()) {
+      'earn' => (Icons.arrow_downward_rounded, AppColors.success, AppColors.successBg),
+      'refund' => (Icons.undo_rounded, AppColors.success, AppColors.successBg),
+      'spend' => (Icons.arrow_upward_rounded, AppColors.danger, AppColors.dangerBg),
+      'redeem' => (Icons.confirmation_number_outlined, AppColors.danger, AppColors.dangerBg),
+      _ => (Icons.tune, AppColors.goldText, AppColors.creamDeep),
     };
 
     return Container(
@@ -381,7 +362,7 @@ class _TxTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(label, style: TextStyle(fontSize: 11, color: fg)),
+              Text(tx.type, style: TextStyle(fontSize: 11, color: fg)),
             ],
           ),
         ],
@@ -452,6 +433,63 @@ class _SectionTitle extends StatelessWidget {
         const SizedBox(width: 8),
         Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ],
+    );
+  }
+}
+
+class _EmptyBox extends StatelessWidget {
+  final String text;
+  const _EmptyBox({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: Alignment.center,
+      child: Text(text, style: const TextStyle(color: AppColors.inkMuted)),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off, size: 48, color: AppColors.danger),
+            const SizedBox(height: 8),
+            const Text(
+              'Could not load points',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.inkMuted),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.red),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
