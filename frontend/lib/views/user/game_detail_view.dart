@@ -8,12 +8,6 @@ import 'package:frontend/services/package_service.dart';
 
 part 'payment_view.dart';
 
-// Run as a Flutter entry point, or push PaygamePackage from an existing app.
-// All prices, UID rules, points and payments are demo data from gamepay-ui.
-void main() => runApp(
-  const MaterialApp(debugShowCheckedModeBanner: false, home: PaygamePackage()),
-);
-
 class PaygamePack {
   const PaygamePack(
     this.quantity,
@@ -40,61 +34,10 @@ class PaygameGame {
   final bool requiresServer;
 }
 
-const paygameGames = <String, PaygameGame>{
-  'rov': PaygameGame('RoV', 'คูปอง', [
-    PaygamePack(40, 35),
-    PaygamePack(90, 79),
-    PaygamePack(230, 199),
-    PaygamePack(400, 350),
-    PaygamePack(800, 690),
-    PaygamePack(1650, 1390),
-  ]),
-  'ff': PaygameGame('Free Fire', 'เพชร', [
-    PaygamePack(100, 39),
-    PaygamePack(310, 119),
-    PaygamePack(520, 199),
-    PaygamePack(1060, 399),
-    PaygamePack(2180, 799),
-    PaygamePack(5600, 1999),
-  ]),
-  'pubg': PaygameGame('PUBG Mobile', 'UC', [
-    PaygamePack(60, 35),
-    PaygamePack(180, 99),
-    PaygamePack(325, 179),
-    PaygamePack(660, 349),
-    PaygamePack(1800, 899),
-    PaygamePack(3850, 1799),
-  ]),
-  'genshin': PaygameGame('Genshin Impact', 'Crystals', [
-    PaygamePack(60, 35),
-    PaygamePack(300, 179),
-    PaygamePack(980, 530),
-    PaygamePack(1980, 1099),
-    PaygamePack(3280, 1799),
-    PaygamePack(6480, 3499),
-  ], requiresServer: true),
-  'valorant': PaygameGame('Valorant', 'VP', [
-    PaygamePack(125, 35),
-    PaygamePack(420, 110),
-    PaygamePack(700, 179),
-    PaygamePack(1375, 350),
-    PaygamePack(2400, 600),
-    PaygamePack(4000, 999),
-  ]),
-  'mlbb': PaygameGame('Mobile Legends', 'เพชร', [
-    PaygamePack(50, 35),
-    PaygamePack(150, 99),
-    PaygamePack(300, 199),
-    PaygamePack(550, 350),
-    PaygamePack(1100, 690),
-    PaygamePack(2200, 1390),
-  ]),
-};
-
 class PaygamePackage extends StatefulWidget {
   const PaygamePackage({
     super.key,
-    this.gameId = 'rov',
+    required this.gameId,
     this.initialPoints = 0,
     this.coupons = const [],
     this.onPaymentCompleted,
@@ -116,7 +59,7 @@ class _PaygamePackageState extends State<PaygamePackage> {
   final _scroll = ScrollController();
   late PaygameGame _game;
   late int _points;
-  int _selected = 3;
+  int _selected = -1;
   String _server = 'Asia';
   bool _catalogLoading = true;
   String? _catalogError;
@@ -131,11 +74,12 @@ class _PaygamePackageState extends State<PaygamePackage> {
   }
 
   void _initialize() {
-    _game = paygameGames[widget.gameId] ?? paygameGames['rov']!;
+    // Empty until the game and its packages are loaded from the backend.
+    _game = const PaygameGame('', 'หน่วย', []);
     _points = widget.initialPoints < 0 ? 0 : widget.initialPoints;
-    _selected = _game.packs.length > 3 && _game.packs[3].enabled
-        ? 3
-        : _game.packs.indexWhere((p) => p.enabled);
+    _selected = -1;
+    _catalogLoading = true;
+    _catalogError = null;
     _loadCatalog();
   }
 

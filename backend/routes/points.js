@@ -16,12 +16,12 @@ router.get('/balance', verifyToken, (req, res) => {
     con.query(sql, [user_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         return res.json({
             user_id: user_id,
-            total_points: result[0].total_points
+            total_points: result[0].total_points,
         });
     });
 });
@@ -39,7 +39,7 @@ router.get('/history', verifyToken, (req, res) => {
     con.query(sql, [user_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
         return res.json(result);
     });
@@ -60,17 +60,17 @@ router.post('/earn', verifyToken, verifyAdmin, (req, res) => {
     `;
 
     if (!user_id || !order_id || !Number.isInteger(points) || points <= 0) {
-        return res.status(400).send("Invalid input");
+        return res.status(400).send('Invalid input');
     }
 
     con.query(checkSql, [order_id, user_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length === 0) {
-            return res.status(400).send("Order payment is not completed");
+            return res.status(400).send('Order payment is not completed');
         }
 
         // Generate unique event key for this order
@@ -85,20 +85,20 @@ router.post('/earn', verifyToken, verifyAdmin, (req, res) => {
         con.query(insertSql, [user_id, order_id, event_key, points], (err, insertResult) => {
             if (err) {
                 // Duplicate event_key
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(409).send("Points already added for this order");
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(409).send('Points already added for this order');
                 }
 
                 console.error(err);
-                return res.status(500).send("Cannot add points");
+                return res.status(500).send('Cannot add points');
             }
 
             return res.status(201).json({
-                message: "Points added successfully",
+                message: 'Points added successfully',
                 point_transaction_id: insertResult.insertId,
                 user_id: user_id,
                 order_id: order_id,
-                points_added: points
+                points_added: points,
             });
         });
     });

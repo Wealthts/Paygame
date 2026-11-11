@@ -40,11 +40,11 @@ router.get('/:order_id', verifyToken, (req, res) => {
     con.query(sql, [order_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length === 0) {
-            return res.status(404).send("Payment not found");
+            return res.status(404).send('Payment not found');
         }
         return res.json(result);
     });
@@ -60,29 +60,29 @@ router.post('/', verifyToken, (req, res) => {
     `;
 
     if (!order_id || !method) {
-        return res.status(400).send("Please provide order_id and method");
+        return res.status(400).send('Please provide order_id and method');
     }
 
     con.query(sql, [order_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length === 0) {
-            return res.status(404).send("Order not found");
+            return res.status(404).send('Order not found');
         }
 
         const order = result[0];
 
         // check order owner
         if (req.user.role !== 'admin' && order.user_id !== req.user.id) {
-            return res.status(403).send("Access denied");
+            return res.status(403).send('Access denied');
         }
 
         // check order status
-        if (order.status !== "Pending") {
-            return res.status(400).send("Order is not available for payment");
+        if (order.status !== 'Pending') {
+            return res.status(400).send('Order is not available for payment');
         }
 
         // check pending payment
@@ -96,11 +96,11 @@ router.post('/', verifyToken, (req, res) => {
         con.query(checkSQL, [order_id], (err, paymentResult) => {
             if (err) {
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
 
             if (paymentResult.length > 0) {
-                return res.status(400).send("Pending payment already exists");
+                return res.status(400).send('Pending payment already exists');
             }
 
             // create transaction reference
@@ -113,24 +113,28 @@ router.post('/', verifyToken, (req, res) => {
                 VALUES (?, ?, ?, ?, 'Pending')
             `;
 
-            con.query(insertSQL, [order_id, transaction_ref, method, order.total_amount], (err, insertResult) => {
-                if (err) {
-                    console.error(err);
-                    return res.status(500).send('Cannot create payment');
-                }
-
-                return res.status(201).json({
-                    message: "Payment created successfully",
-                    payment: {
-                        payment_id: insertResult.insertId,
-                        order_id: order_id,
-                        transaction_ref: transaction_ref,
-                        method: method,
-                        amount: order.total_amount,
-                        status: 'Pending'
+            con.query(
+                insertSQL,
+                [order_id, transaction_ref, method, order.total_amount],
+                (err, insertResult) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Cannot create payment');
                     }
-                });
-            });
+
+                    return res.status(201).json({
+                        message: 'Payment created successfully',
+                        payment: {
+                            payment_id: insertResult.insertId,
+                            order_id: order_id,
+                            transaction_ref: transaction_ref,
+                            method: method,
+                            amount: order.total_amount,
+                            status: 'Pending',
+                        },
+                    });
+                },
+            );
         });
     });
 });
@@ -142,13 +146,13 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
     const status = req.body.status;
 
     if (!['Paid', 'Failed'].includes(status)) {
-        return res.status(400).send("Invalid payment status");
+        return res.status(400).send('Invalid payment status');
     }
 
     con.getConnection((err, db) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         // undo everything and send an error
@@ -163,7 +167,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
         // save everything and send the result
         const commit = (body) => {
             db.commit((err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 db.release();
                 return res.json(body);
             });
@@ -178,7 +182,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             `;
 
             db.query(sql, [status, status, payment_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 updateOrder(order);
             });
         };
@@ -193,7 +197,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             `;
 
             db.query(sql, [orderStatus, status, order.order_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 updateCoupon(order);
             });
         };
@@ -213,12 +217,12 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             `;
 
             db.query(useSQL, [order.user_id, order.coupon_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
 
                 const countSQL = `UPDATE coupons SET use_count = use_count + 1 WHERE coupon_id = ?`;
 
                 db.query(countSQL, [order.coupon_id], (err) => {
-                    if (err) return rollback(500, "DB error", err);
+                    if (err) return rollback(500, 'DB error', err);
                     createReceipt(order);
                 });
             });
@@ -235,10 +239,15 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
                 (user_id, order_id, event_key, type, points_delta)
                 VALUES (?, ?, ?, 'Refund', ?)
             `;
-            const values = [order.user_id, order.order_id, 'REFUND_' + order.order_id, order.spent_points];
+            const values = [
+                order.user_id,
+                order.order_id,
+                'REFUND_' + order.order_id,
+                order.spent_points,
+            ];
 
             db.query(sql, values, (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 commit({ payment_id: payment_id, status: status });
             });
         };
@@ -251,7 +260,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             `;
 
             db.query(sql, [order.order_id, 'RCP-' + order.order_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 earnPoints(order);
             });
         };
@@ -268,7 +277,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             const values = [order.user_id, order.order_id, 'ORDER_' + order.order_id, earned];
 
             db.query(sql, values, (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 commit({ payment_id: payment_id, status: status });
             });
         };
@@ -277,7 +286,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             if (err) {
                 db.release();
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
 
             // find the order owner
@@ -289,14 +298,14 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
             `;
 
             db.query(lookupSQL, [payment_id], (err, lookup) => {
-                if (err) return rollback(500, "DB error", err);
-                if (lookup.length === 0) return rollback(404, "Payment not found");
+                if (err) return rollback(500, 'DB error', err);
+                if (lookup.length === 0) return rollback(404, 'Payment not found');
 
                 // lock the user so coins and coupons can't change at the same time
                 const lockUserSQL = `SELECT user_id FROM users WHERE user_id = ? FOR UPDATE`;
 
                 db.query(lockUserSQL, [lookup[0].user_id], (err) => {
-                    if (err) return rollback(500, "DB error", err);
+                    if (err) return rollback(500, 'DB error', err);
 
                     // lock the payment and its order
                     const orderSQL = `
@@ -308,7 +317,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
                     `;
 
                     db.query(orderSQL, [payment_id], (err, rows) => {
-                        if (err) return rollback(500, "DB error", err);
+                        if (err) return rollback(500, 'DB error', err);
 
                         const order = rows[0];
 
@@ -319,7 +328,7 @@ router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
 
                         // only a pending payment can be approved or rejected
                         if (order.payment_status !== 'Pending' || order.status !== 'Pending') {
-                            return rollback(409, "Payment already finalized");
+                            return rollback(409, 'Payment already finalized');
                         }
 
                         updatePayment(order);

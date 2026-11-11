@@ -25,17 +25,17 @@ router.get('/:order_id', verifyToken, (req, res) => {
     con.query(sql, [order_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB server");
+            return res.status(500).send('DB server');
         }
 
         if (result.length === 0) {
-            return res.status(404).send("Receipt not found");
+            return res.status(404).send('Receipt not found');
         }
 
         const receipt = result[0];
 
         if (req.user.role !== 'admin' && receipt.user_id !== req.user.id) {
-            return res.status(403).send("Access denied");
+            return res.status(403).send('Access denied');
         }
 
         return res.json({
@@ -45,7 +45,7 @@ router.get('/:order_id', verifyToken, (req, res) => {
             issued_at: receipt.issued_at,
             game_name: receipt.game_name_snapshot,
             package_name: receipt.package_name_snapshot,
-            tatal_amount: receipt.tatal_amount
+            tatal_amount: receipt.tatal_amount,
         });
     });
 });
@@ -74,11 +74,11 @@ router.post('/', verifyToken, (req, res) => {
     con.query(checkSQL, [order_id], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length === 0) {
-            return res.status(400).send("Payment is not completed");
+            return res.status(400).send('Payment is not completed');
         }
 
         const order = result[0];
@@ -108,15 +108,15 @@ router.post('/', verifyToken, (req, res) => {
             con.query(updateSQL, [order_id], (err, updateResult) => {
                 if (err) {
                     console.error(err);
-                    return res.status(500).send("DB error");
+                    return res.status(500).send('DB error');
                 }
 
                 if (updateResult.affectedRows === 0) {
-                    return res.status(404).send("Order not found or status not changed");
+                    return res.status(404).send('Order not found or status not changed');
                 }
 
                 return res.status(201).json({
-                    message: "Receipt created successfully",
+                    message: 'Receipt created successfully',
                     receipt: {
                         receipt_id: insertResult.insertId,
                         order_id: order.order_id,
@@ -124,8 +124,8 @@ router.post('/', verifyToken, (req, res) => {
                         game_name: order.game_name_snapshot,
                         package_name: order.package_name_snapshot,
                         total_amount: order.total_amount,
-                        order_status: "Completed"
-                    }
+                        order_status: 'Completed',
+                    },
                 });
             });
         });

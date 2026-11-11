@@ -29,10 +29,16 @@ class _AdminPaymentsViewState extends State<AdminPaymentsView> {
     try {
       await PaymentService.updateStatus(paymentId, status);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status == 'Paid' ? 'Approved' : 'Rejected')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(status == 'Paid' ? 'Approved' : 'Rejected')),
+      );
       _reload();
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$error')));
+      }
     } finally {
       if (mounted) setState(() => _updatingId = null);
     }
@@ -40,32 +46,71 @@ class _AdminPaymentsViewState extends State<AdminPaymentsView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Payment Management'), actions: [IconButton(onPressed: _updatingId == null ? _reload : null, icon: const Icon(Icons.refresh))]),
-        body: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _payments,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-            if (snapshot.hasError) return Center(child: Text('${snapshot.error}'));
-            final payments = snapshot.data ?? [];
-            if (payments.isEmpty) return const Center(child: Text('No payments found'));
-            return ListView.builder(
-              padding: const EdgeInsets.all(12), itemCount: payments.length,
-              itemBuilder: (context, index) {
-                final payment = payments[index];
-                final id = int.tryParse(payment['payment_id'].toString()) ?? 0;
-                final pending = payment['status'] == 'Pending';
-                return Card(child: ListTile(
-                  title: Text('${payment['game_name_snapshot']} · ${payment['package_name_snapshot']}'),
-                  subtitle: Text('${payment['display_name'] ?? payment['username']} · ฿${payment['amount']}\n${payment['method']} · ${payment['transaction_ref']}'),
-                  isThreeLine: true,
-                  trailing: pending ? Wrap(spacing: 4, children: [
-                    IconButton(onPressed: _updatingId == null ? () => _update(id, 'Paid') : null, icon: const Icon(Icons.check_circle, color: Colors.green)),
-                    IconButton(onPressed: _updatingId == null ? () => _update(id, 'Failed') : null, icon: const Icon(Icons.cancel, color: Colors.red)),
-                  ]) : Text('${payment['status']}'),
-                ));
-              },
+    appBar: AppBar(
+      title: const Text('Payment Management'),
+      actions: [
+        IconButton(
+          onPressed: _updatingId == null ? _reload : null,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+    ),
+    body: FutureBuilder<List<Map<String, dynamic>>>(
+      future: _payments,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('${snapshot.error}'));
+        }
+        final payments = snapshot.data ?? [];
+        if (payments.isEmpty) {
+          return const Center(child: Text('No payments found'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: payments.length,
+          itemBuilder: (context, index) {
+            final payment = payments[index];
+            final id = int.tryParse(payment['payment_id'].toString()) ?? 0;
+            final pending = payment['status'] == 'Pending';
+            return Card(
+              child: ListTile(
+                title: Text(
+                  '${payment['game_name_snapshot']} · ${payment['package_name_snapshot']}',
+                ),
+                subtitle: Text(
+                  '${payment['display_name'] ?? payment['username']} · ฿${payment['amount']}\n${payment['method']} · ${payment['transaction_ref']}',
+                ),
+                isThreeLine: true,
+                trailing: pending
+                    ? Wrap(
+                        spacing: 4,
+                        children: [
+                          IconButton(
+                            onPressed: _updatingId == null
+                                ? () => _update(id, 'Paid')
+                                : null,
+                            icon: const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _updatingId == null
+                                ? () => _update(id, 'Failed')
+                                : null,
+                            icon: const Icon(Icons.cancel, color: Colors.red),
+                          ),
+                        ],
+                      )
+                    : Text('${payment['status']}'),
+              ),
             );
           },
-        ),
-      );
+        );
+      },
+    ),
+  );
 }
