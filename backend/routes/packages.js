@@ -134,7 +134,7 @@ router.put("/:id", verifyToken, verifyAdmin, (req, res) => {
         price === undefined ||
         price === null ||
         price === "" ||
-        (Number(is_active) !== 0 && Number(is_active) !== 1)
+        (is_active !== 0 && is_active !== 1 && is_active !== "0" && is_active !== "1")
     ) {
         return res.status(400).send("Invalid data");
     }
