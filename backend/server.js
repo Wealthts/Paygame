@@ -30,6 +30,7 @@ app.use('/api/receipts', receiptsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/coupons', couponsRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/admin', require('./routes/admin_reports'));
 
 // Start Server
 app.listen(3000, () => {

@@ -15,17 +15,17 @@ class ApiService {
   static const Duration timeoutDuration = Duration(seconds: 15);
   // Secure Storage
   static const FlutterSecureStorage storage = FlutterSecureStorage();
-  
+
   // Get JWT Token
   static Future<String?> getToken() async {
     return await storage.read(key: 'auth_token');
   }
-  
+
   // Save JWT Token
   static Future<void> saveToken(String token) async {
     await storage.write(key: 'auth_token', value: token);
   }
-  
+
   // Delete JWT Token
   static Future<void> deleteToken() async {
     await storage.delete(key: 'auth_token');

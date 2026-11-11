@@ -123,7 +123,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   // กล่องสีขาวขอบครีม
-  Widget buildBox({required String title, required IconData icon, required Widget child}) {
+  Widget buildBox({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -141,7 +145,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -270,7 +277,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 buildRow('Completed', '${countStatus('Completed')}'),
                 buildRow('Cancelled', '${countStatus('Cancelled')}'),
                 const Divider(),
-                buildRow('Coupon discount given', money(sumCompleted('coupon_discount'))),
+                buildRow(
+                  'Coupon discount given',
+                  money(sumCompleted('coupon_discount')),
+                ),
                 buildRow('Fees collected', money(sumCompleted('fee_amount'))),
                 buildRow('Coins used', '$coinsUsed'),
               ],
@@ -291,7 +301,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   Widget buildBody() {
     if (isLoading && orders.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: primaryColor));
+      return const Center(
+        child: CircularProgressIndicator(color: primaryColor),
+      );
     }
 
     if (errorMessage != null) {

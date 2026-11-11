@@ -54,7 +54,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: PaygamePayment(
-            game: paygameGames['rov']!,
+            game: const PaygameGame('RoV', 'คูปอง', [PaygamePack(40, 35)]),
             pack: const PaygamePack(40, 35),
             uid: '1234567890',
             initialPoints: 2000,

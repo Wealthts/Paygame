@@ -6,5 +6,5 @@ module.exports = mysql.createPool({
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'paygame',
-    connectionLimit: 10
+    connectionLimit: 10,
 });
