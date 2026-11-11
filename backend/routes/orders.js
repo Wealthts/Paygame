@@ -11,7 +11,7 @@ router.get('/', verifyToken, (req, res) => {
     let sql = "SELECT * FROM orders ";
 
     if (req.user.role !== 'admin') {
-        sql += "WHERE user_id = ?";
+        sql += "WHERE user_id = ? ";
         values.push(user_id);
     }
     sql += "ORDER BY created_at DESC";
