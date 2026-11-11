@@ -22,140 +22,7 @@ class PaygameController extends ChangeNotifier {
   final Set<String> _recordedOrders = {};
   List<CouponModel> get coupons => List.unmodifiable(_coupons);
 
-  // Initial Mock Data (No Backend Required)
-  List<GameModel> games = [
-    GameModel(
-      gameId: 'rov',
-      gameName: 'RoV',
-      shortName: 'RoV',
-      category: 'Mobile',
-      unit: 'coupons',
-      uidPattern: r'^[0-9]{10,12}$',
-      requiresServer: false,
-      isActive: true,
-      isPopular: true,
-    ),
-    GameModel(
-      gameId: 'ff',
-      gameName: 'Free Fire',
-      shortName: 'FF',
-      category: 'Mobile',
-      unit: 'gems',
-      uidPattern: r'^[0-9]{9,11}$',
-      requiresServer: false,
-      isActive: true,
-      isPopular: true,
-    ),
-    GameModel(
-      gameId: 'pubg',
-      gameName: 'PUBG Mobile',
-      shortName: 'PG',
-      category: 'Mobile',
-      unit: 'UC',
-      uidPattern: r'^[0-9]{10,12}$',
-      requiresServer: false,
-      isActive: true,
-      isPopular: true,
-    ),
-    GameModel(
-      gameId: 'genshin',
-      gameName: 'Genshin Impact',
-      shortName: 'GI',
-      category: 'Mobile',
-      unit: 'Crystals',
-      uidPattern: r'^[0-9]{9}$',
-      requiresServer: true,
-      isActive: true,
-      isPopular: false,
-    ),
-    GameModel(
-      gameId: 'valorant',
-      gameName: 'Valorant',
-      shortName: 'VP',
-      category: 'PC',
-      unit: 'VP',
-      uidPattern: r'^.+#.+$',
-      requiresServer: false,
-      isActive: true,
-      isPopular: true,
-    ),
-    GameModel(
-      gameId: 'mlbb',
-      gameName: 'Mobile Legends',
-      shortName: 'ML',
-      category: 'Mobile',
-      unit: 'gems',
-      uidPattern: r'^[0-9]{8,10}$',
-      requiresServer: true,
-      isActive: true,
-      isPopular: false,
-    ),
-  ];
-
-  Map<String, List<PackageModel>> gamePackages = {
-    'rov': [
-      PackageModel(
-        packageId: 101,
-        gameId: 'rov',
-        packageName: '40 coupons',
-        price: 35,
-        isActive: true,
-      ),
-      PackageModel(
-        packageId: 102,
-        gameId: 'rov',
-        packageName: '90 coupons',
-        price: 79,
-        isActive: true,
-      ),
-      PackageModel(
-        packageId: 103,
-        gameId: 'rov',
-        packageName: '230 coupons',
-        price: 199,
-        isActive: true,
-      ),
-      PackageModel(
-        packageId: 104,
-        gameId: 'rov',
-        packageName: '400 coupons',
-        price: 350,
-        isActive: true,
-      ),
-    ],
-    'ff': [
-      PackageModel(
-        packageId: 201,
-        gameId: 'ff',
-        packageName: '100 gems',
-        price: 39,
-        isActive: true,
-      ),
-      PackageModel(
-        packageId: 202,
-        gameId: 'ff',
-        packageName: '310 gems',
-        price: 119,
-        isActive: true,
-      ),
-    ],
-    'genshin': [
-      PackageModel(
-        packageId: 301,
-        gameId: 'genshin',
-        packageName: '60 Crystals',
-        price: 35,
-        isActive: true,
-      ),
-      PackageModel(
-        packageId: 302,
-        gameId: 'genshin',
-        packageName: '300 Crystals',
-        price: 179,
-        isActive: true,
-      ),
-    ],
-  };
+  List<GameModel> games = [];
 
   List<RewardHistory> pointHistory = [];
 
@@ -164,7 +31,7 @@ class PaygameController extends ChangeNotifier {
       games = await GameService.getActiveGames();
       notifyListeners();
     } catch (_) {
-      // Keep the existing catalogue visible when the server is offline.
+      // Server offline: the game list stays empty until the next refresh.
     }
   }
 

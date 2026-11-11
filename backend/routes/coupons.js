@@ -22,7 +22,7 @@ router.get('/', verifyToken, (req, res) => {
     con.query(sql, [user_id], (err, rows) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         // how many of each coupon are used by pending orders
@@ -36,13 +36,15 @@ router.get('/', verifyToken, (req, res) => {
         con.query(pendingSQL, [user_id], (err, pendingRows) => {
             if (err) {
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
 
             const pending = {};
-            pendingRows.forEach(row => { pending[row.coupon_id] = row.pending; });
+            pendingRows.forEach((row) => {
+                pending[row.coupon_id] = row.pending;
+            });
 
-            const result = rows.map(row => {
+            const result = rows.map((row) => {
                 let status = 'Available';
 
                 if (row.used_at) {
@@ -63,10 +65,11 @@ router.get('/', verifyToken, (req, res) => {
                     amount_satang: row.discount_type === 'fixed' ? toSatang(row.discount_value) : 0,
                     percent: row.discount_type === 'percent' ? Number(row.discount_value) : 0,
                     minimum_satang: toSatang(row.min_order_amount),
-                    max_discount_satang: row.max_discount_amount === null ? null : toSatang(row.max_discount_amount),
+                    max_discount_satang:
+                        row.max_discount_amount === null ? null : toSatang(row.max_discount_amount),
                     end_date: row.end_date,
                     used_at: row.used_at,
-                    status: status
+                    status: status,
                 };
             });
 
@@ -78,14 +81,16 @@ router.get('/', verifyToken, (req, res) => {
 // claim a coupon by typing its code
 router.post('/claim', verifyToken, (req, res) => {
     const user_id = req.user.id;
-    const code = String(req.body.code || '').trim().toUpperCase();
+    const code = String(req.body.code || '')
+        .trim()
+        .toUpperCase();
 
     if (!code) {
-        return res.status(400).send("Please enter a coupon code");
+        return res.status(400).send('Please enter a coupon code');
     }
 
     if (isRewardCode(code)) {
-        return res.status(400).send("This coupon can only be redeemed with coins");
+        return res.status(400).send('This coupon can only be redeemed with coins');
     }
 
     const sql = `SELECT * FROM coupons WHERE code = ?`;
@@ -93,11 +98,11 @@ router.post('/claim', verifyToken, (req, res) => {
     con.query(sql, [code], (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length === 0) {
-            return res.status(404).send("Coupon not found");
+            return res.status(404).send('Coupon not found');
         }
 
         const coupon = result[0];
@@ -113,11 +118,11 @@ router.post('/claim', verifyToken, (req, res) => {
         con.query(checkSQL, [user_id, coupon.coupon_id], (err, owned) => {
             if (err) {
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
 
             if (owned.length > 0) {
-                return res.status(409).send("You already have this coupon");
+                return res.status(409).send('You already have this coupon');
             }
 
             const insertSQL = `INSERT INTO user_coupons (user_id, coupon_id) VALUES (?, ?)`;
@@ -125,14 +130,14 @@ router.post('/claim', verifyToken, (req, res) => {
             con.query(insertSQL, [user_id, coupon.coupon_id], (err, insertResult) => {
                 if (err) {
                     console.error(err);
-                    return res.status(500).send("DB error");
+                    return res.status(500).send('DB error');
                 }
 
                 return res.status(201).json({
-                    message: "Coupon claimed successfully",
+                    message: 'Coupon claimed successfully',
                     user_coupon_id: insertResult.insertId,
                     coupon_id: coupon.coupon_id,
-                    code: coupon.code
+                    code: coupon.code,
                 });
             });
         });
@@ -146,13 +151,13 @@ router.post('/redeem', verifyToken, (req, res) => {
     const reward = rewards[req.body.reward_id];
 
     if (!reward) {
-        return res.status(400).send("Unknown reward");
+        return res.status(400).send('Unknown reward');
     }
 
     con.getConnection((err, db) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         // undo everything and send an error
@@ -167,7 +172,7 @@ router.post('/redeem', verifyToken, (req, res) => {
         // 1. lock the user and check coins
         const checkCoins = () => {
             db.query('SELECT user_id FROM users WHERE user_id = ? FOR UPDATE', [user_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
 
                 const balanceSQL = `
                     SELECT COALESCE(SUM(points_delta), 0) AS balance
@@ -176,10 +181,10 @@ router.post('/redeem', verifyToken, (req, res) => {
                 `;
 
                 db.query(balanceSQL, [user_id], (err, result) => {
-                    if (err) return rollback(500, "DB error", err);
+                    if (err) return rollback(500, 'DB error', err);
 
                     if (Number(result[0].balance) < reward.cost) {
-                        return rollback(400, "Not enough coins");
+                        return rollback(400, 'Not enough coins');
                     }
 
                     findCoupon();
@@ -189,12 +194,16 @@ router.post('/redeem', verifyToken, (req, res) => {
 
         // 2. find the reward's coupon
         const findCoupon = () => {
-            db.query('SELECT coupon_id FROM coupons WHERE code = ?', [reward.code], (err, result) => {
-                if (err) return rollback(500, "DB error", err);
-                if (result.length === 0) return rollback(404, "Reward coupon not found");
+            db.query(
+                'SELECT coupon_id FROM coupons WHERE code = ?',
+                [reward.code],
+                (err, result) => {
+                    if (err) return rollback(500, 'DB error', err);
+                    if (result.length === 0) return rollback(404, 'Reward coupon not found');
 
-                giveCoupon(result[0].coupon_id);
-            });
+                    giveCoupon(result[0].coupon_id);
+                },
+            );
         };
 
         // 3. give the coupon to the user
@@ -202,7 +211,7 @@ router.post('/redeem', verifyToken, (req, res) => {
             const sql = `INSERT INTO user_coupons (user_id, coupon_id) VALUES (?, ?)`;
 
             db.query(sql, [user_id, coupon_id], (err, result) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 spendCoins(result.insertId);
             });
         };
@@ -216,10 +225,10 @@ router.post('/redeem', verifyToken, (req, res) => {
             `;
 
             db.query(sql, [user_id, 'COUPON_' + user_coupon_id, -reward.cost], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
 
                 db.commit((err) => {
-                    if (err) return rollback(500, "DB error", err);
+                    if (err) return rollback(500, 'DB error', err);
                     db.release();
                     return res.status(201).json({ user_coupon_id: user_coupon_id });
                 });
@@ -231,7 +240,7 @@ router.post('/redeem', verifyToken, (req, res) => {
             if (err) {
                 db.release();
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
             checkCoins();
         });
