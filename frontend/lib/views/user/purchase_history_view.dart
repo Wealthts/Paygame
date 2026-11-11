@@ -18,10 +18,14 @@ class _PurchaseHistoryViewState extends State<PurchaseHistoryView> {
   @override
   void initState() {
     super.initState();
-    _reload();
+    _orders = OrderService.list();
   }
 
-  void _reload() => setState(() => _orders = OrderService.list());
+  void _reload() {
+    setState(() {
+      _orders = OrderService.list();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
