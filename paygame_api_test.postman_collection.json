@@ -30,7 +30,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"Natthawat\",\n    \"password\": \"1234\",\n    \"display_name\": \"Test User\"\n}",
+              "raw": "{\n  \"username\": \"Natthawat\",\n  \"display_name\": \"Test User\",\n  \"email\": \"6731501035@lamduan.mfu.ac.th\",\n  \"password\": \"1234\",\n\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -60,7 +60,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"Natthawat\",\n  \"password\": \"1234\"\n}",
+              "raw": "{\n  \"username\": \"Natthawat\",\n  \"password\": \"123456\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -163,7 +163,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"game_name\": \"Genshin Impact\",\n  \"category\": \"RPG\",\n  \"uid_pattern\": \"UID_001\",\n  \"requires_server\": 1\n}",
+              "raw": "{\n  \"game_name\": \"PUBG\",\n  \"category\": \"Battle Royal\",\n  \"uid_pattern\": \"003\",\n  \"requires_server\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -175,7 +175,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2ODM3MzgsImV4cCI6MTc5MzY4NzMzOH0.yC8zzphO27whGWWs0EUvOxLGF1Mx8g-MYmNnAY1Sv7s",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTQzODg0MzksImV4cCI6MTc5NDQ3NDgzOX0.MqGkO3npbNVyx1vqryT_ZeBq5o05siyqU4LLwoiJT44",
                   "type": "string"
                 }
               ]
@@ -222,7 +222,42 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM2ODM3MzgsImV4cCI6MTc5MzY4NzMzOH0.yC8zzphO27whGWWs0EUvOxLGF1Mx8g-MYmNnAY1Sv7s",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM4NTIxNTcsImV4cCI6MTc5MzkzODU1N30.JssnHv9W_R2lTnpNNNRx5L7QYhC7pe0-2f5XeYvO0N0",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/games/3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "api",
+                "games",
+                "3"
+              ],
+              "port": "3000",
+              "query": []
+            },
+            "body": {
+              "mode": "none"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJOYXR0aGF3YXQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTM4MDU4MTcsImV4cCI6MTc5MzgwNzYxN30.DoxhJPOab-IVdM58kiMMRk6JV-7prcZ-iWPY3T7_1XE",
                   "type": "string"
                 }
               ]
