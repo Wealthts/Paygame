@@ -196,14 +196,32 @@ class CouponModel {
     this.amountSatang = 0,
     this.percent = 0,
     this.minimumSatang = 0,
+    this.maxDiscountSatang,
     this.status = 'Available',
   });
   final String id, name;
   final String status;
   final int amountSatang, percent, minimumSatang;
+
+  /// Highest discount a percent coupon can give; null = no cap.
+  final int? maxDiscountSatang;
+
+  /// Short Thai description, e.g. "ลด 20% (สูงสุด ฿50)".
+  String get description {
+    if (percent > 0) {
+      return maxDiscountSatang == null
+          ? 'ลด $percent%'
+          : 'ลด $percent% (สูงสุด ฿${maxDiscountSatang! ~/ 100})';
+    }
+    return 'ลด ฿${amountSatang ~/ 100}';
+  }
+
   int discountFor(int price) {
     if (status != 'Available' || price < minimumSatang || price <= 0) return 0;
-    final discount = percent > 0 ? price * percent ~/ 100 : amountSatang;
+    var discount = percent > 0 ? price * percent ~/ 100 : amountSatang;
+    if (maxDiscountSatang != null && discount > maxDiscountSatang!) {
+      discount = maxDiscountSatang!;
+    }
     return discount.clamp(0, price);
   }
 }

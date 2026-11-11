@@ -63,6 +63,16 @@ class AppTheme {
           ),
         ),
       ),
+      // White cards everywhere (Material 3 otherwise tints them pink from the red seed colour).
+      cardTheme: CardThemeData(
+        color: AppColors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFFF3E7D3)),
+        ),
+      ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),
