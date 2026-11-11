@@ -85,8 +85,19 @@ class _AdminShellViewState extends State<AdminShellView> {
   }
 
   Future<void> handleLogout() async {
-    if (widget.onLogout != null) {
+    if (widget.onLogout == null) return;
+
+    try {
       await widget.onLogout!();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

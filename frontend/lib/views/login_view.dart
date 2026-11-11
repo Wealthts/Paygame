@@ -58,18 +58,25 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       // Admin Navigation
+
+      // Admin Navigation
       if (controller.currentRole == 'admin') {
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => AdminShellView(
               onLogout: () async {
-                await context.read<PaygameController>().logout();
+                final paygameController = context.read<PaygameController>();
 
-                if (context.mounted) {
-                  // ignore: use_build_context_synchronously
-                  Navigator.pop(context);
-                }
+                await paygameController.logout();
+
+                if (!mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               },
             ),
           ),

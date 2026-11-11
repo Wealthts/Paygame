@@ -180,50 +180,67 @@ class PaygameController extends ChangeNotifier {
     ),
   ];
 
-  // bool login(String username, String password) {
-  //   if (username.isEmpty || password.isEmpty) return false;
-  //   authToken = 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}';
-  //   currentUsername = username;
-  //   currentRole = username.toLowerCase() == 'admin' ? 'admin' : 'user';
-  //   notifyListeners();
-  //   return true;
-  // }
-
   // Login with backend
   Future<void> login(String username, String password) async {
     if (username.trim().isEmpty || password.isEmpty) {
-      throw Exception("Plases enter username and password");
+      throw Exception("Please enter username and password");
     }
 
-    // send login request to backend
     final response = await AuthService.login(username.trim(), password);
     final user = response['user'];
+    final token = response['token']?.toString();
 
     if (user is! Map) {
       throw Exception("Invalid user information");
     }
 
-    // update user information
-    currentUserId = int.tryParse(user['id'].toString());
-    currentUsername = user['username']?.toString() ?? username;
-    currentDisplayName = user['display_name']?.toString() ?? '';
-    currentRole = user['role']?.toString() ?? 'user';
+    if (token == null || token.isEmpty) {
+      throw Exception("Invalid authentication token");
+    }
 
-    // get JWT token
-    authToken = response['token']?.toString();
+    final userId = int.tryParse(user['id'].toString());
+
+    if (userId == null) {
+      throw Exception("Invalid user ID");
+    }
+
+    final role = user['role']?.toString();
+
+    if (role != 'admin' && role != 'user') {
+      throw Exception("Invalid user role");
+    }
+
+    // Update user information
+    currentUserId = userId;
+    currentUsername = user['username']?.toString() ?? username.trim();
+    currentDisplayName = user['display_name']?.toString() ?? '';
+    currentRole = role!;
+
+    // Save JWT token
+    authToken = token;
     notifyListeners();
   }
 
   // logout
-  Future<void> logout() async {
-    await AuthService.logout();
 
-    authToken = null;
-    currentUserId = null;
-    currentUsername = '';
-    currentDisplayName = '';
-    currentRole = 'user';
-    notifyListeners();
+  Future<void> logout() async {
+    try {
+      await AuthService.logout();
+    } finally {
+      // Clear authentication data
+      authToken = null;
+      currentUserId = null;
+      currentUsername = '';
+      currentDisplayName = '';
+      currentRole = 'user';
+
+      // Clear account-specific data
+      latestOrder = null;
+      userPointsBalance = 0;
+      pointHistory.clear();
+
+      notifyListeners();
+    }
   }
 
   void addOrder(OrderModel order) {

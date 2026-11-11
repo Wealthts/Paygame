@@ -1,26 +1,26 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  // API Base URL
-  // For Windows / Web:
   static const String baseUrl = 'http://localhost:3000/api';
-
+  // Request Timeout
+  static const Duration timeoutDuration = Duration(seconds: 15);
   // Secure Storage
   static const FlutterSecureStorage storage = FlutterSecureStorage();
-
+  
   // Get JWT Token
   static Future<String?> getToken() async {
     return await storage.read(key: 'auth_token');
   }
-
+  
   // Save JWT Token
   static Future<void> saveToken(String token) async {
     await storage.write(key: 'auth_token', value: token);
   }
-
+  
   // Delete JWT Token
   static Future<void> deleteToken() async {
     await storage.delete(key: 'auth_token');
@@ -30,16 +30,18 @@ class ApiService {
   static Future<Map<String, String>> getHeaders({
     bool requiresAuth = true,
   }) async {
-    Map<String, String> headers = {'Content-Type': 'application/json'};
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
 
     if (requiresAuth) {
-      String? token = await getToken();
+      final token = await getToken();
 
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
-
     return headers;
   }
 
@@ -57,7 +59,32 @@ class ApiService {
       return data;
     }
 
+    if (response.statusCode == 401) {
+      throw Exception('Unauthorized: Please login again');
+    }
+
+    if (response.statusCode == 403) {
+      throw Exception('Access denied: You do not have permission');
+    }
+
     throw Exception('API Error ${response.statusCode}: $data');
+  }
+
+  // Send HTTP Request
+  static Future<dynamic> sendRequest(
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      final response = await request().timeout(timeoutDuration);
+
+      return handleResponse(response);
+    } on TimeoutException {
+      throw Exception('Connection timeout. Please try again.');
+    } on http.ClientException {
+      throw Exception(
+        'Cannot connect to server. Please check your connection.',
+      );
+    }
   }
 
   // GET Request
@@ -65,12 +92,11 @@ class ApiService {
     String endpoint, {
     bool requiresAuth = true,
   }) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await getHeaders(requiresAuth: requiresAuth),
-    );
+    final headers = await getHeaders(requiresAuth: requiresAuth);
 
-    return handleResponse(response);
+    return await sendRequest(
+      () => http.get(Uri.parse('$baseUrl$endpoint'), headers: headers),
+    );
   }
 
   // POST Request
@@ -79,13 +105,15 @@ class ApiService {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await getHeaders(requiresAuth: requiresAuth),
-      body: jsonEncode(body),
-    );
+    final headers = await getHeaders(requiresAuth: requiresAuth);
 
-    return handleResponse(response);
+    return await sendRequest(
+      () => http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(body),
+      ),
+    );
   }
 
   // PUT Request
@@ -94,13 +122,15 @@ class ApiService {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await getHeaders(requiresAuth: requiresAuth),
-      body: jsonEncode(body),
-    );
+    final headers = await getHeaders(requiresAuth: requiresAuth);
 
-    return handleResponse(response);
+    return await sendRequest(
+      () => http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(body),
+      ),
+    );
   }
 
   // DELETE Request
@@ -108,11 +138,10 @@ class ApiService {
     String endpoint, {
     bool requiresAuth = true,
   }) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: await getHeaders(requiresAuth: requiresAuth),
-    );
+    final headers = await getHeaders(requiresAuth: requiresAuth);
 
-    return handleResponse(response);
+    return await sendRequest(
+      () => http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers),
+    );
   }
 }

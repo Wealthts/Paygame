@@ -21,10 +21,9 @@ router.get("/test/:game_id", (req, res) => {
 
 // GET: all packages for admin
 // GET api/package/:game_id
-router.get("/:game_id", verifyToken, verifyAdmin, (req, res) => {
+router.get("/admin/:game_id", verifyToken, verifyAdmin, (req, res) => {
     const game_id = req.params.game_id;
-    const sql =
-        "SELECT * FROM packages WHERE game_id = ? ORDER BY package_id DESC";
+    const sql = "SELECT * FROM packages WHERE game_id = ? ORDER BY package_id DESC";
 
     con.query(sql, [game_id], (err, result) => {
         if (err) {
