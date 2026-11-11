@@ -26,12 +26,30 @@ class _AdminShellViewState extends State<AdminShellView> {
 
   final List<Widget> pages = const [
     AdminDashboardView(),
-    AdminGamesView(),
-    AdminPackagesView(),
-    AdminOrdersView(),
-    AdminPaymentsView(),
-    AdminPointsView(),
-    AdminReceiptsView(),
+    AdminTabGroupView(
+      tabs: [
+        Tab(icon: Icon(Icons.sports_esports_outlined), text: 'Games'),
+        Tab(icon: Icon(Icons.inventory_2_outlined), text: 'Packages'),
+      ],
+      children: [
+        AdminGamesView(),
+        AdminPackagesView(),
+      ],
+    ),
+    AdminTabGroupView(
+      tabs: [
+        Tab(icon: Icon(Icons.receipt_long_outlined), text: 'Orders'),
+        Tab(icon: Icon(Icons.payment_outlined), text: 'Payments'),
+        Tab(icon: Icon(Icons.receipt_outlined), text: 'Receipts'),
+        Tab(icon: Icon(Icons.stars_outlined), text: 'Points'),
+      ],
+      children: [
+        AdminOrdersView(),
+        AdminPaymentsView(),
+        AdminReceiptsView(),
+        AdminPointsView(),
+      ],
+    ),
     AdminUsersView(),
   ];
 
@@ -42,34 +60,14 @@ class _AdminShellViewState extends State<AdminShellView> {
       label: 'Dashboard',
     ),
     NavigationDestination(
-      icon: Icon(Icons.sports_esports_outlined),
-      selectedIcon: Icon(Icons.sports_esports),
-      label: 'Games',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.inventory_2_outlined),
-      selectedIcon: Icon(Icons.inventory_2),
-      label: 'Packages',
+      icon: Icon(Icons.category_outlined),
+      selectedIcon: Icon(Icons.category),
+      label: 'Catalog',
     ),
     NavigationDestination(
       icon: Icon(Icons.receipt_long_outlined),
       selectedIcon: Icon(Icons.receipt_long),
       label: 'Orders',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.payment_outlined),
-      selectedIcon: Icon(Icons.payment),
-      label: 'Payments',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.stars_outlined),
-      selectedIcon: Icon(Icons.stars),
-      label: 'Points',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.receipt_outlined),
-      selectedIcon: Icon(Icons.receipt),
-      label: 'Receipts',
     ),
     NavigationDestination(
       icon: Icon(Icons.people_outline),
@@ -215,6 +213,48 @@ class _AdminShellViewState extends State<AdminShellView> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Groups several admin pages under one menu item, switched with a tab bar.
+class AdminTabGroupView extends StatelessWidget {
+  final List<Tab> tabs;
+  final List<Widget> children;
+
+  const AdminTabGroupView({
+    super.key,
+    required this.tabs,
+    required this.children,
+  });
+
+  static const Color primaryColor = Color(0xFFA60C19);
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: tabs.length,
+      child: Column(
+        children: [
+          Material(
+            color: Colors.white,
+            child: TabBar(
+              tabs: tabs,
+              isScrollable: tabs.length > 3,
+              tabAlignment: tabs.length > 3 ? TabAlignment.start : null,
+              labelColor: primaryColor,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: primaryColor,
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              children: children,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

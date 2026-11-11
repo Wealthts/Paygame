@@ -200,8 +200,10 @@ class _AdminPackagesViewState extends State<AdminPackagesView> {
       },
     );
 
-    nameController.dispose();
-    priceController.dispose();
+    // Don't dispose the controllers here: the dialog is still playing its
+    // closing animation and its text fields are still using them.
+    // Disposing now triggers the '_dependents.isEmpty' assertion.
+    // They are garbage-collected once the dialog is gone.
 
     return result;
   }

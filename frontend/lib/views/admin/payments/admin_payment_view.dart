@@ -15,10 +15,14 @@ class _AdminPaymentsViewState extends State<AdminPaymentsView> {
   @override
   void initState() {
     super.initState();
-    _reload();
+    _payments = PaymentService.listForAdmin();
   }
 
-  void _reload() => setState(() => _payments = PaymentService.listForAdmin());
+  void _reload() {
+    setState(() {
+      _payments = PaymentService.listForAdmin();
+    });
+  }
 
   Future<void> _update(int paymentId, String status) async {
     setState(() => _updatingId = paymentId);
