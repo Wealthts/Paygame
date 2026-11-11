@@ -128,6 +128,8 @@ class OrderModel {
   final int earnedPoints;
   final int pointsBalance;
   final DateTime createdAt;
+  final int spentPoints;
+  final String? couponId;
 
   OrderModel({
     required this.orderId,
@@ -143,6 +145,8 @@ class OrderModel {
     required this.earnedPoints,
     required this.pointsBalance,
     required this.createdAt,
+    this.spentPoints = 0,
+    this.couponId,
   });
 }
 
@@ -183,4 +187,40 @@ bool _readBool(dynamic value) {
   }
 
   return false;
+}
+
+class CouponModel {
+  const CouponModel({
+    required this.id,
+    required this.name,
+    this.amountSatang = 0,
+    this.percent = 0,
+    this.minimumSatang = 0,
+    this.status = 'Available',
+  });
+  final String id, name;
+  final String status;
+  final int amountSatang, percent, minimumSatang;
+  int discountFor(int price) {
+    if (status != 'Available' || price < minimumSatang || price <= 0) return 0;
+    final discount = percent > 0 ? price * percent ~/ 100 : amountSatang;
+    return discount.clamp(0, price);
+  }
+}
+
+class CheckoutDiscount {
+  CheckoutDiscount({
+    required int priceSatang,
+    required int points,
+    bool usePoints = false,
+    CouponModel? coupon,
+  }) {
+    couponSatang = coupon?.discountFor(priceSatang) ?? 0;
+    spentPoints = usePoints
+        ? points.clamp(0, (priceSatang - couponSatang) ~/ 10)
+        : 0;
+  }
+  late final int couponSatang, spentPoints;
+  int get coinSatang => spentPoints * 10;
+  int get totalSatang => couponSatang + coinSatang;
 }

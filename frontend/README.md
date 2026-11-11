@@ -42,3 +42,19 @@ their management features are not implemented yet.
 ## Run
 
 From this directory, run `flutter run`.
+
+## Coupons and coins
+
+Apply `backend/migrations/001_coupons.sql` to the existing database once, then
+restart the API. The Coupons tab displays available, reserved and used coupons.
+Reward redemption and checkout now use authenticated backend APIs.
+
+One coupon can be selected per order. Its minimum spend uses the package price.
+Coins apply after the coupon at 10 coins per baht, up to the remaining price.
+Fees and earned coins are based on the discounted price. Submission creates the
+order and payment atomically, reserving the coupon and debiting coins. Admin
+approval consumes the coupon; rejection restores the coupon and refunds coins.
+Refresh the Coupons tab to retrieve the latest balance after admin review.
+
+Validation: `flutter analyze`, `flutter test test/coupons_test.dart`,
+`flutter build web`; backend tests: `node --test test/*.test.js`.

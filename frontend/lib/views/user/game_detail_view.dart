@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../models/paygame_models.dart';
+import 'coupons_view.dart';
 import 'package:frontend/services/order_service.dart';
-import 'package:frontend/services/payment_service.dart';
 import 'package:frontend/services/game_service.dart';
 import 'package:frontend/services/package_service.dart';
 
@@ -14,7 +15,12 @@ void main() => runApp(
 );
 
 class PaygamePack {
-  const PaygamePack(this.quantity, this.price, {this.packageId = 0, this.enabled = true});
+  const PaygamePack(
+    this.quantity,
+    this.price, {
+    this.packageId = 0,
+    this.enabled = true,
+  });
   final int quantity;
   final int price;
   final int packageId;
@@ -90,10 +96,12 @@ class PaygamePackage extends StatefulWidget {
     super.key,
     this.gameId = 'rov',
     this.initialPoints = 0,
+    this.coupons = const [],
     this.onPaymentCompleted,
   });
   final String gameId;
   final int initialPoints;
+  final List<CouponModel> coupons;
   final ValueChanged<PaygameOrder>? onPaymentCompleted;
 
   @override
@@ -134,7 +142,9 @@ class _PaygamePackageState extends State<PaygamePackage> {
   Future<void> _loadCatalog() async {
     try {
       final games = await GameService.getActiveGames();
-      final game = games.where((item) => item.gameId == widget.gameId).firstOrNull;
+      final game = games
+          .where((item) => item.gameId == widget.gameId)
+          .firstOrNull;
       if (game == null) throw Exception('Game not found');
       final packages = await PackageService.getActivePackages(game.gameId);
       if (!mounted) return;
@@ -207,9 +217,10 @@ class _PaygamePackageState extends State<PaygamePackage> {
           uid: _uid.text,
           server: _server,
           initialPoints: _points,
+          coupons: widget.coupons,
           onPaymentCompleted: (order) {
             if (mounted) setState(() => _points = order.pointsBalance);
-            if (order.success && mounted) Navigator.of(context).pop();
+            if (mounted) Navigator.of(context).pop();
             widget.onPaymentCompleted?.call(order);
           },
         ),
@@ -290,7 +301,8 @@ class _PaygamePackageState extends State<PaygamePackage> {
             ),
           ),
         ),
-        bottomNavigationBar: _catalogLoading || _catalogError != null || _selected < 0
+        bottomNavigationBar:
+            _catalogLoading || _catalogError != null || _selected < 0
             ? null
             : _bottomAction(),
       ),

@@ -54,30 +54,8 @@ router.get('/:id', verifyToken, (req, res) => {
     });
 });
 
-//  API update status Order
-router.put('/:id/complete', verifyToken, verifyAdmin, (req, res) => {
-    const order_id = req.params.id;
-    const sql = `
-        UPDATE orders 
-        SET status = 'Completed',
-            completed_at = CURRENT_TIMESTAMP 
-        WHERE order_id = ?
-    `;
-
-    con.query(sql, [order_id], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send("DB error");
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).send("Order not found or no change")
-        }
-
-        return res.json({ 
-            message: "Order completed successfully"
-        });
-    });
+router.put('/:id/complete', verifyToken, verifyAdmin, (req,res) => {
+    res.status(409).send('Approve the pending payment to complete this order');
 });
 
 // create order

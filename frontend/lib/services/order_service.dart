@@ -5,9 +5,15 @@ class OrderService {
     required int packageId,
     required String playerUid,
     String? serverCode,
+    int? couponId,
+    bool useCoins = false,
+    String method = 'qr',
   }) async {
-    final response = await ApiService.post('/orders', {
+    final response = await ApiService.post('/checkout', {
       'package_id': packageId,
+      'coupon_id': couponId,
+      'use_coins': useCoins,
+      'method': method,
       'player_uid': playerUid,
       'server_code': serverCode ?? '',
     });
@@ -21,6 +27,8 @@ class OrderService {
   static Future<List<Map<String, dynamic>>> list() async {
     final response = await ApiService.get('/orders');
     if (response is! List) throw Exception('Invalid orders response');
-    return response.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return response
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 }

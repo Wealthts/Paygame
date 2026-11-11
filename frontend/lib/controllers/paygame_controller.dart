@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import 'package:frontend/models/paygame_models.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/services/game_service.dart';
@@ -13,9 +14,13 @@ class PaygameController extends ChangeNotifier {
   String currentUsername = '';
   int? currentUserId;
   String currentDisplayName = '';
-  int userPointsBalance = 2000;
+  int userPointsBalance = 0;
+  String? walletError;
 
   OrderModel? latestOrder;
+  final List<CouponModel> _coupons = [];
+  final Set<String> _recordedOrders = {};
+  List<CouponModel> get coupons => List.unmodifiable(_coupons);
 
   // Initial Mock Data (No Backend Required)
   List<GameModel> games = [
@@ -152,38 +157,7 @@ class PaygameController extends ChangeNotifier {
     ],
   };
 
-  List<RewardHistory> pointHistory = [
-    const RewardHistory(
-      title: 'แต้มเริ่มต้น',
-      date: '',
-      amount: '+2000',
-      isEarned: true,
-    ),
-    const RewardHistory(
-      title: 'เติม ROV · GP-0042',
-      date: '29 Oct',
-      amount: '+34',
-      isEarned: true,
-    ),
-    const RewardHistory(
-      title: 'ใช้แต้มเป็นส่วนลด · GP-0042',
-      date: '29 Oct',
-      amount: '−100',
-      isEarned: false,
-    ),
-    const RewardHistory(
-      title: 'เติม Genshin · GP-0038',
-      date: '25 Oct',
-      amount: '+53',
-      isEarned: true,
-    ),
-    const RewardHistory(
-      title: 'Sign-up Bonus',
-      date: '15 Sep',
-      amount: '+50',
-      isEarned: true,
-    ),
-  ];
+  List<RewardHistory> pointHistory = [];
 
   Future<void> loadCatalog() async {
     try {
@@ -232,6 +206,10 @@ class PaygameController extends ChangeNotifier {
 
     // Save JWT token
     authToken = token;
+    _coupons.clear();
+    userPointsBalance = 0;
+    pointHistory.clear();
+    await refreshWallet();
     notifyListeners();
   }
 
@@ -252,13 +230,20 @@ class PaygameController extends ChangeNotifier {
       latestOrder = null;
       userPointsBalance = 0;
       pointHistory.clear();
+      _coupons.clear();
+      _recordedOrders.clear();
+      walletError = null;
 
       notifyListeners();
     }
   }
 
   void addOrder(OrderModel order) {
+    if (order.status != 'completed' || !_recordedOrders.add(order.orderId)) {
+      return;
+    }
     latestOrder = order;
+    _coupons.removeWhere((coupon) => coupon.id == order.couponId);
     userPointsBalance = order.pointsBalance;
 
     final dateStr =
@@ -274,13 +259,13 @@ class PaygameController extends ChangeNotifier {
       ),
     );
 
-    if (order.discountAmount > 0) {
+    if (order.spentPoints > 0) {
       pointHistory.insert(
         1,
         RewardHistory(
           title: 'ใช้แต้มเป็นส่วนลด · ${order.orderId}',
           date: dateStr,
-          amount: '−100',
+          amount: '−${order.spentPoints}',
           isEarned: false,
         ),
       );
@@ -289,24 +274,51 @@ class PaygameController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool redeemReward(RewardItem reward) {
-    if (userPointsBalance < reward.cost) return false;
-
-    userPointsBalance -= reward.cost;
-    final now = DateTime.now();
-    final dateStr = '${now.day}/${now.month}/${now.year + 543}';
-
-    pointHistory.insert(
-      0,
-      RewardHistory(
-        title: 'แลก ${reward.name}',
-        date: dateStr,
-        amount: '−${reward.cost}',
-        isEarned: false,
-      ),
-    );
-
+  Future<void> refreshWallet() async {
+    if (authToken == null) return;
+    final token = authToken;
+    try {
+      final results = await Future.wait([
+        ApiService.get('/coupons'),
+        ApiService.get('/points/balance'),
+        ApiService.get('/points/history'),
+      ]);
+      if (token != authToken) return;
+      _coupons.clear();
+      _coupons.addAll(
+        (results[0] as List).map(
+          (row) => CouponModel(
+            id: row['coupon_id'].toString(),
+            name: row['name'].toString(),
+            amountSatang: row['amount_satang'] as int,
+            percent: row['percent'] as int,
+            minimumSatang: row['minimum_satang'] as int,
+            status: row['status'].toString(),
+          ),
+        ),
+      );
+      userPointsBalance = int.parse(results[1]['total_points'].toString());
+      pointHistory = (results[2] as List).map((row) {
+        final amount = int.parse(row['points_delta'].toString());
+        return RewardHistory(
+          title: row['type'].toString(),
+          date: row['created_at'].toString(),
+          amount: '${amount >= 0 ? '+' : ''}$amount',
+          isEarned: amount >= 0,
+        );
+      }).toList();
+      walletError = null;
+    } catch (error) {
+      if (token != authToken) return;
+      walletError = 'โหลดคูปองและคอยน์ไม่สำเร็จ กรุณาลองใหม่';
+    }
     notifyListeners();
+  }
+
+  Future<bool> redeemReward(RewardItem reward) async {
+    if (authToken == null) return false;
+    await ApiService.post('/coupons/redeem', {'reward_id': reward.id});
+    await refreshWallet();
     return true;
   }
 }

@@ -249,7 +249,8 @@ class _HomeViewState extends State<HomeView> {
                               MaterialPageRoute(
                                 builder: (_) => PaygamePackage(
                                   gameId: game.gameId,
-                                  initialPoints: widget.initialPoints,
+                                  initialPoints: controller.userPointsBalance,
+                                  coupons: controller.coupons,
                                   onPaymentCompleted: widget.onPaymentCompleted,
                                 ),
                               ),

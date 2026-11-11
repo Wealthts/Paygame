@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'views/user/coupons_view.dart';
 import 'package:frontend/views/user/game_detail_view.dart';
 import 'package:provider/provider.dart';
 
@@ -47,7 +48,11 @@ class _GamePayShellState extends State<GamePayShell> {
   final List<PaygameOrder> orders = [];
 
   void handlePaymentCompleted(PaygameOrder order) {
-    if (!order.success) return;
+    context.read<PaygameController>().refreshWallet();
+    if (!order.success) {
+      setState(() => currentIndex = 1);
+      return;
+    }
 
     final orderModel = OrderModel(
       orderId: order.id,
@@ -63,6 +68,8 @@ class _GamePayShellState extends State<GamePayShell> {
       earnedPoints: order.earnedPoints,
       pointsBalance: order.pointsBalance,
       createdAt: order.createdAt,
+      spentPoints: order.spentPoints,
+      couponId: order.couponId,
     );
 
     context.read<PaygameController>().addOrder(orderModel);
@@ -81,7 +88,7 @@ class _GamePayShellState extends State<GamePayShell> {
       if (!mounted) return;
 
       setState(() {
-        currentIndex = 3;
+        currentIndex = 4;
       });
 
       ScaffoldMessenger.of(
@@ -118,9 +125,20 @@ class _GamePayShellState extends State<GamePayShell> {
             initialPoints: controller.userPointsBalance,
           ),
 
-          PurchaseHistoryView(orders: orders),
+          PurchaseHistoryView(
+            key: ValueKey(
+              '${controller.currentUserId}-$currentIndex-${orders.length}',
+            ),
+            orders: orders,
+          ),
 
           const RewardsScreen(),
+
+          CouponsView(
+            coupons: controller.coupons,
+            error: controller.walletError,
+            onRefresh: controller.refreshWallet,
+          ),
 
           // Change Login page to Account page after login
           if (controller.authToken == null)
@@ -144,12 +162,15 @@ class _GamePayShellState extends State<GamePayShell> {
     );
   }
 
+  void controllerRefresh() => context.read<PaygameController>().refreshWallet();
+
   Widget buildNavigationBar(bool isLoggedIn) {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: (destinationIndex) {
         setState(() {
           currentIndex = destinationIndex;
+          controllerRefresh();
         });
       },
       destinations: [
@@ -167,6 +188,10 @@ class _GamePayShellState extends State<GamePayShell> {
           icon: Icon(Icons.card_giftcard_outlined),
           selectedIcon: Icon(Icons.card_giftcard),
           label: 'Rewards',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.confirmation_number_outlined),
+          label: 'คูปอง',
         ),
         NavigationDestination(
           icon: Icon(isLoggedIn ? Icons.person : Icons.person_outline),

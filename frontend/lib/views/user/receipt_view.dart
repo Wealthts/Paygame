@@ -154,7 +154,7 @@ class ReceiptScreen extends StatelessWidget {
                         const DashedDivider(),
                         _Line('ราคาแพ็กเกจ', money(currentOrder.priceSatang)),
                         _Line(
-                          'ส่วนลดจากแต้ม',
+                          'ส่วนลดคูปองและคอยน์',
                           '−${money(currentOrder.discountSatang)}',
                           valueColor: AppColors.red,
                         ),

@@ -135,88 +135,29 @@ router.post('/', verifyToken, (req, res) => {
     });
 });
 
-// update payment status (admin)
-router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
-    const payment_id = req.params.id;
-    const status = req.body.status;
-    const sql = `
-        UPDATE payments
-        SET status = ?,
-            paid_at = IF
-            (? = 'Paid', CURRENT_TIMESTAMP, NULL)
-        WHERE payment_id = ?
-    `;
-
-    if (status !== 'Paid' && status !== 'Failed') {
-        return res.status(400).send("Invalid payment status");
-    }
-
-    con.query(sql, [status, status, payment_id], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send("DB error");
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).send("Payment not found");
-        }
-
-        if (status === 'Failed') {
-            return res.json({
-                message: 'Payment status updated successfully',
-                payment_id: payment_id,
-                status: status
-            });
-        }
-
-        const completeOrderSql = `
-            UPDATE orders
-            SET status = 'Completed', completed_at = CURRENT_TIMESTAMP
-            WHERE order_id = (SELECT order_id FROM payments WHERE payment_id = ?)
-        `;
-
-        con.query(completeOrderSql, [payment_id], (orderErr) => {
-            if (orderErr) {
-                console.error(orderErr);
-                return res.status(500).send('Payment updated but order completion failed');
-            }
-
-            const receiptSql = `
-                INSERT IGNORE INTO receipts (order_id, receipt_number)
-                SELECT order_id, CONCAT('RCP', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), payment_id)
-                FROM payments WHERE payment_id = ?
-            `;
-            con.query(receiptSql, [payment_id], (receiptErr) => {
-                if (receiptErr) {
-                    console.error(receiptErr);
-                    return res.status(500).send('Payment updated but receipt creation failed');
-                }
-
-                const pointsSql = `
-                    INSERT IGNORE INTO point_transactions
-                    (user_id, order_id, event_key, type, points_delta)
-                    SELECT orders.user_id, orders.order_id,
-                           CONCAT('ORDER_', orders.order_id), 'Earn',
-                           GREATEST(FLOOR(orders.total_amount / 10), 1)
-                    FROM orders
-                    INNER JOIN payments ON payments.order_id = orders.order_id
-                    WHERE payments.payment_id = ?
-                `;
-                con.query(pointsSql, [payment_id], (pointsErr) => {
-                    if (pointsErr) {
-                        console.error(pointsErr);
-                        return res.status(500).send('Payment updated but points creation failed');
-                    }
-
-                    return res.json({
-                        message: 'Payment approved; order, receipt and points updated',
-                        payment_id: payment_id,
-                        status: status
-                    });
-                });
-            });
-        });
-    });
-});
-
+// Approval and refunds are atomic and can only transition a pending payment.
+const {transaction, fail, endpoint} = require('../transaction');
+router.put('/:id/status', verifyToken, verifyAdmin, endpoint(req => transaction(async db => {
+ const status = req.body.status;
+ if (!['Paid','Failed'].includes(status)) fail('Invalid payment status');
+ const [lookup] = await db.query(`SELECT o.user_id FROM payments p JOIN orders o ON o.order_id=p.order_id WHERE p.payment_id=?`, [req.params.id]);
+ if (!lookup.length) fail('Payment not found',404);
+ await db.query('SELECT user_id FROM users WHERE user_id=? FOR UPDATE',[lookup[0].user_id]);
+ const [rows] = await db.query(`SELECT p.status AS payment_status, o.* FROM payments p JOIN orders o ON o.order_id=p.order_id WHERE p.payment_id=? FOR UPDATE`,[req.params.id]);
+ const order = rows[0];
+ if (order.payment_status === status) return {status};
+ if (order.payment_status !== 'Pending' || order.status !== 'Pending') fail('Payment already finalized',409);
+ await db.query("UPDATE payments SET status=?,paid_at=IF(?='Paid',CURRENT_TIMESTAMP,NULL) WHERE payment_id=?",[status,status,req.params.id]);
+ await db.query("UPDATE orders SET status=?, completed_at=IF(?='Paid',CURRENT_TIMESTAMP,NULL) WHERE order_id=?",[status==='Paid'?'Completed':'Cancelled',status,order.order_id]);
+ await db.query("UPDATE user_coupons SET status=?,order_id=IF(?='Paid',order_id,NULL) WHERE order_id=? AND status='Reserved'",[status==='Paid'?'Used':'Available',status,order.order_id]);
+ if (status === 'Failed' && order.spent_points > 0) {
+   await db.query(`INSERT INTO point_transactions (user_id,order_id,event_key,type,points_delta) VALUES (?,?,?,'Refund',?)`,[order.user_id,order.order_id,'REFUND_'+order.order_id,order.spent_points]);
+ }
+ if (status === 'Paid') {
+   await db.query('INSERT IGNORE INTO receipts (order_id,receipt_number) VALUES (?,?)',[order.order_id,'RCP-'+order.order_id]);
+   const earned = Math.floor(Math.round((Number(order.original_price)-Number(order.discount_amount))*100)/1000);
+   await db.query(`INSERT IGNORE INTO point_transactions (user_id,order_id,event_key,type,points_delta) VALUES (?,?,?,'Earn',?)`,[order.user_id,order.order_id,'ORDER_'+order.order_id,earned]);
+ }
+ return {payment_id:req.params.id,status};
+})));
 module.exports = router;

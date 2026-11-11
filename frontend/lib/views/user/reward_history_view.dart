@@ -42,9 +42,19 @@ class RewardsScreen extends StatelessWidget {
             child: const Text('ยกเลิก'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogContext);
-              final success = controller.redeemReward(reward);
+              bool success;
+              try {
+                success = await controller.redeemReward(reward);
+              } catch (error) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(error.toString())));
+                return;
+              }
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
