@@ -47,56 +47,56 @@ class AdminUsersView extends StatefulWidget {
 }
 
 class _AdminUsersViewState extends State<AdminUsersView> {
-  late IO.Socket _socket;
-  List<UserModel> _allUsers = [];
-  bool _isLoading = true;
+  late IO.Socket socket;
+  List<UserModel> allUsers = [];
+  bool isLoading = true;
 
-  final TextEditingController _searchController = TextEditingController();
-  String _selectedRoleFilter = 'All';
-  String _selectedStatusFilter = 'All';
+  final TextEditingController searchController = TextEditingController();
+  String selectedRoleFilter = 'All';
+  String selectedStatusFilter = 'All';
 
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
-    _initRealtimeSocket();
+    fetchUsers();
+    initRealtimeSocket();
   }
 
   // ดึงข้อมูลผู้ใช้ทั้งหมดโดยใช้ ApiService (แนบ Bearer Token ให้อัตโนมัติ)[cite: 10]
-  Future<void> _fetchUsers() async {
+  Future<void> fetchUsers() async {
     try {
       final response = await ApiService.get('/users');
       if (mounted && response is Map && response['users'] is List) {
         setState(() {
-          _allUsers = (response['users'] as List)
+          allUsers = (response['users'] as List)
               .map((e) => UserModel.fromJson(e))
               .toList();
-          _isLoading = false;
+          isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => isLoading = false);
         _showSnackBar(e.toString(), Colors.red);
       }
     }
   }
 
   // เชื่อมต่อ Socket.io Real-time
-  void _initRealtimeSocket() async {
+  void initRealtimeSocket() async {
     final token =
         await ApiService.getToken(); // ดึง Token จาก Secure Storage[cite: 10]
 
-    _socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
       'auth': {'token': token},
     });
 
-    _socket.on('users_updated', (data) {
+    socket.on('users_updated', (data) {
       if (mounted && data is List) {
         setState(() {
-          _allUsers = data.map((e) => UserModel.fromJson(e)).toList();
+          allUsers = data.map((e) => UserModel.fromJson(e)).toList();
         });
       }
     });
@@ -104,31 +104,31 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
   @override
   void dispose() {
-    _socket.dispose();
-    _searchController.dispose();
+    socket.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
   List<UserModel> get _filteredUsers {
-    return _allUsers.where((user) {
-      final query = _searchController.text.toLowerCase();
+    return allUsers.where((user) {
+      final query = searchController.text.toLowerCase();
       final matchesSearch =
           user.username.toLowerCase().contains(query) ||
           user.displayName.toLowerCase().contains(query) ||
           user.email.toLowerCase().contains(query);
 
       final matchesRole =
-          _selectedRoleFilter == 'All' || user.role == _selectedRoleFilter;
+          selectedRoleFilter == 'All' || user.role == selectedRoleFilter;
       final matchesStatus =
-          _selectedStatusFilter == 'All' ||
-          (_selectedStatusFilter == 'Active' && user.isActive) ||
-          (_selectedStatusFilter == 'Inactive' && !user.isActive);
+          selectedStatusFilter == 'All' ||
+          (selectedStatusFilter == 'Active' && user.isActive) ||
+          (selectedStatusFilter == 'Inactive' && !user.isActive);
 
       return matchesSearch && matchesRole && matchesStatus;
     }).toList();
   }
 
-  Future<void> _toggleActiveStatus(UserModel user, bool newStatus) async {
+  Future<void> toggleActiveStatus(UserModel user, bool newStatus) async {
     // 1. ป้องกันไม่ให้กดระงับ Admin
     if (user.role.toString().toLowerCase() == 'admin') {
       _showSnackBar('ไม่สามารถระงับการใช้งานบัญชี Admin ได้', Colors.redAccent);
@@ -168,7 +168,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   }
 
   // ฟังก์ชันเปลี่ยนบทบาท Role
-  Future<void> _toggleRole(UserModel user) async {
+  Future<void> toggleRole(UserModel user) async {
     if (user.role == 'admin') {
       _showSnackBar('ไม่สามารถเปลี่ยนบทบาทของบัญชี Admin ได้', Colors.orange);
       return;
@@ -181,7 +181,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
     }
   }
 
-  void _showEditProfileDialog(UserModel user) {
+  void showEditProfileDialog(UserModel user) {
     final nameCtrl = TextEditingController(text: user.displayName);
     final emailCtrl = TextEditingController(text: user.email);
 
@@ -234,7 +234,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                   });
 
                   // ดึงรายการผู้ใช้ใหม่ทั้งหมดทันที
-                  await _fetchUsers();
+                  await fetchUsers();
                   _showSnackBar('แก้ไขข้อมูลเรียบร้อย', Colors.green);
                 }
               } catch (e) {
@@ -251,7 +251,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   }
 
   // รีเซ็ตรหัสผ่าน Dialog
-  void _showResetPasswordDialog(UserModel user) {
+  void showResetPasswordDialog(UserModel user) {
     final pwdCtrl = TextEditingController();
     showDialog(
       context: context,
@@ -301,8 +301,8 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   @override
   Widget build(BuildContext context) {
     final filteredList = _filteredUsers;
-    final total = _allUsers.length;
-    final activeCount = _allUsers.where((u) => u.isActive).length;
+    final total = allUsers.length;
+    final activeCount = allUsers.where((u) => u.isActive).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -310,7 +310,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
         backgroundColor: const Color(0xFFA60C19),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
@@ -338,7 +338,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
                   // Search Bar
                   TextField(
-                    controller: _searchController,
+                    controller: searchController,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: 'ค้นหาด้วย ชื่อ/อีเมล...',
@@ -358,7 +358,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedRoleFilter,
+                          initialValue: selectedRoleFilter,
                           decoration: const InputDecoration(
                             labelText: 'Role',
                             border: OutlineInputBorder(),
@@ -378,13 +378,13 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             ),
                           ],
                           onChanged: (val) =>
-                              setState(() => _selectedRoleFilter = val!),
+                              setState(() => selectedRoleFilter = val!),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedStatusFilter,
+                          initialValue: selectedStatusFilter,
                           decoration: const InputDecoration(
                             labelText: 'Status',
                             border: OutlineInputBorder(),
@@ -404,7 +404,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                             ),
                           ],
                           onChanged: (val) =>
-                              setState(() => _selectedStatusFilter = val!),
+                              setState(() => selectedStatusFilter = val!),
                         ),
                       ),
                     ],
@@ -455,17 +455,19 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                                       // สวิตช์ปุ่มปิด/เปิด (แสดงสีเขียวตรงตาม DB)[cite: 7]
                                       Switch(
                                         value: user.isActive,
-                                        activeColor: Colors.green,
+                                        activeThumbColor: Colors.green,
                                         onChanged: (val) =>
-                                            _toggleActiveStatus(user, val),
+                                            toggleActiveStatus(user, val),
                                       ),
                                       PopupMenuButton<String>(
                                         onSelected: (val) {
-                                          if (val == 'edit')
-                                            _showEditProfileDialog(user);
-                                          if (val == 'reset')
-                                            _showResetPasswordDialog(user);
-                                          if (val == 'role') _toggleRole(user);
+                                          if (val == 'edit') {
+                                            showEditProfileDialog(user);
+                                          }
+                                          if (val == 'reset') {
+                                            showResetPasswordDialog(user);
+                                          }
+                                          if (val == 'role') toggleRole(user);
                                         },
                                         itemBuilder: (context) => [
                                           const PopupMenuItem(
@@ -501,9 +503,9 @@ class _AdminUsersViewState extends State<AdminUsersView> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

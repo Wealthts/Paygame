@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/models/paygame_models.dart';
-import 'package:frontend/views/user/game_detail_view.dart';
+import 'package:frontend/views/user/package_view.dart';
 
 void main() {
   const coupon = CouponModel(id: 'one', name: 'ลด 20 บาท', amountSatang: 2000);

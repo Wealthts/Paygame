@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/paygame_controller.dart';
-import 'game_detail_view.dart';
+import 'package_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({
