@@ -135,29 +135,193 @@ router.post('/', verifyToken, (req, res) => {
     });
 });
 
-// Approval and refunds are atomic and can only transition a pending payment.
-const {transaction, fail, endpoint} = require('../transaction');
-router.put('/:id/status', verifyToken, verifyAdmin, endpoint(req => transaction(async db => {
- const status = req.body.status;
- if (!['Paid','Failed'].includes(status)) fail('Invalid payment status');
- const [lookup] = await db.query(`SELECT o.user_id FROM payments p JOIN orders o ON o.order_id=p.order_id WHERE p.payment_id=?`, [req.params.id]);
- if (!lookup.length) fail('Payment not found',404);
- await db.query('SELECT user_id FROM users WHERE user_id=? FOR UPDATE',[lookup[0].user_id]);
- const [rows] = await db.query(`SELECT p.status AS payment_status, o.* FROM payments p JOIN orders o ON o.order_id=p.order_id WHERE p.payment_id=? FOR UPDATE`,[req.params.id]);
- const order = rows[0];
- if (order.payment_status === status) return {status};
- if (order.payment_status !== 'Pending' || order.status !== 'Pending') fail('Payment already finalized',409);
- await db.query("UPDATE payments SET status=?,paid_at=IF(?='Paid',CURRENT_TIMESTAMP,NULL) WHERE payment_id=?",[status,status,req.params.id]);
- await db.query("UPDATE orders SET status=?, completed_at=IF(?='Paid',CURRENT_TIMESTAMP,NULL) WHERE order_id=?",[status==='Paid'?'Completed':'Cancelled',status,order.order_id]);
- await db.query("UPDATE user_coupons SET status=?,order_id=IF(?='Paid',order_id,NULL) WHERE order_id=? AND status='Reserved'",[status==='Paid'?'Used':'Available',status,order.order_id]);
- if (status === 'Failed' && order.spent_points > 0) {
-   await db.query(`INSERT INTO point_transactions (user_id,order_id,event_key,type,points_delta) VALUES (?,?,?,'Refund',?)`,[order.user_id,order.order_id,'REFUND_'+order.order_id,order.spent_points]);
- }
- if (status === 'Paid') {
-   await db.query('INSERT IGNORE INTO receipts (order_id,receipt_number) VALUES (?,?)',[order.order_id,'RCP-'+order.order_id]);
-   const earned = Math.floor(Math.round((Number(order.original_price)-Number(order.discount_amount))*100)/1000);
-   await db.query(`INSERT IGNORE INTO point_transactions (user_id,order_id,event_key,type,points_delta) VALUES (?,?,?,'Earn',?)`,[order.user_id,order.order_id,'ORDER_'+order.order_id,earned]);
- }
- return {payment_id:req.params.id,status};
-})));
+// update payment status (admin approve / reject)
+// Every step runs inside one transaction: if any query fails, nothing changes.
+router.put('/:id/status', verifyToken, verifyAdmin, (req, res) => {
+    const payment_id = req.params.id;
+    const status = req.body.status;
+
+    if (!['Paid', 'Failed'].includes(status)) {
+        return res.status(400).send("Invalid payment status");
+    }
+
+    con.getConnection((err, db) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("DB error");
+        }
+
+        // undo everything and send an error
+        const rollback = (code, message, error) => {
+            if (error) console.error(error);
+            db.rollback(() => {
+                db.release();
+                return res.status(code).send(message);
+            });
+        };
+
+        // save everything and send the result
+        const commit = (body) => {
+            db.commit((err) => {
+                if (err) return rollback(500, "DB error", err);
+                db.release();
+                return res.json(body);
+            });
+        };
+
+        db.beginTransaction((err) => {
+            if (err) {
+                db.release();
+                console.error(err);
+                return res.status(500).send("DB error");
+            }
+
+            // find the order owner
+            const lookupSQL = `
+                SELECT orders.user_id
+                FROM payments
+                INNER JOIN orders ON orders.order_id = payments.order_id
+                WHERE payments.payment_id = ?
+            `;
+
+            db.query(lookupSQL, [payment_id], (err, lookup) => {
+                if (err) return rollback(500, "DB error", err);
+                if (lookup.length === 0) return rollback(404, "Payment not found");
+
+                // lock the user so coins and coupons can't change at the same time
+                const lockUserSQL = `SELECT user_id FROM users WHERE user_id = ? FOR UPDATE`;
+
+                db.query(lockUserSQL, [lookup[0].user_id], (err) => {
+                    if (err) return rollback(500, "DB error", err);
+
+                    // lock the payment and its order
+                    const orderSQL = `
+                        SELECT payments.status AS payment_status, orders.*
+                        FROM payments
+                        INNER JOIN orders ON orders.order_id = payments.order_id
+                        WHERE payments.payment_id = ?
+                        FOR UPDATE
+                    `;
+
+                    db.query(orderSQL, [payment_id], (err, rows) => {
+                        if (err) return rollback(500, "DB error", err);
+
+                        const order = rows[0];
+
+                        // same decision again: nothing to do
+                        if (order.payment_status === status) {
+                            return commit({ status: status });
+                        }
+
+                        // only a pending payment can be approved or rejected
+                        if (order.payment_status !== 'Pending' || order.status !== 'Pending') {
+                            return rollback(409, "Payment already finalized");
+                        }
+
+                        updatePayment(order);
+                    });
+                });
+            });
+        });
+
+        // 1. update payment
+        const updatePayment = (order) => {
+            const sql = `
+                UPDATE payments
+                SET status = ?, paid_at = IF(? = 'Paid', CURRENT_TIMESTAMP, NULL)
+                WHERE payment_id = ?
+            `;
+
+            db.query(sql, [status, status, payment_id], (err) => {
+                if (err) return rollback(500, "DB error", err);
+                updateOrder(order);
+            });
+        };
+
+        // 2. update order (Paid -> Completed, Failed -> Cancelled)
+        const updateOrder = (order) => {
+            const orderStatus = status === 'Paid' ? 'Completed' : 'Cancelled';
+            const sql = `
+                UPDATE orders
+                SET status = ?, completed_at = IF(? = 'Paid', CURRENT_TIMESTAMP, NULL)
+                WHERE order_id = ?
+            `;
+
+            db.query(sql, [orderStatus, status, order.order_id], (err) => {
+                if (err) return rollback(500, "DB error", err);
+                updateCoupon(order);
+            });
+        };
+
+        // 3. coupon: Paid -> Used, Failed -> back to Available
+        const updateCoupon = (order) => {
+            const couponStatus = status === 'Paid' ? 'Used' : 'Available';
+            const sql = `
+                UPDATE user_coupons
+                SET status = ?, order_id = IF(? = 'Paid', order_id, NULL)
+                WHERE order_id = ? AND status = 'Reserved'
+            `;
+
+            db.query(sql, [couponStatus, status, order.order_id], (err) => {
+                if (err) return rollback(500, "DB error", err);
+
+                if (status === 'Paid') {
+                    createReceipt(order);
+                } else {
+                    refundCoins(order);
+                }
+            });
+        };
+
+        // 4a. rejected: give back the coins the user spent
+        const refundCoins = (order) => {
+            if (order.spent_points <= 0) {
+                return commit({ payment_id: payment_id, status: status });
+            }
+
+            const sql = `
+                INSERT INTO point_transactions
+                (user_id, order_id, event_key, type, points_delta)
+                VALUES (?, ?, ?, 'Refund', ?)
+            `;
+            const values = [order.user_id, order.order_id, 'REFUND_' + order.order_id, order.spent_points];
+
+            db.query(sql, values, (err) => {
+                if (err) return rollback(500, "DB error", err);
+                commit({ payment_id: payment_id, status: status });
+            });
+        };
+
+        // 4b. approved: create receipt
+        const createReceipt = (order) => {
+            const sql = `
+                INSERT IGNORE INTO receipts (order_id, receipt_number)
+                VALUES (?, ?)
+            `;
+
+            db.query(sql, [order.order_id, 'RCP-' + order.order_id], (err) => {
+                if (err) return rollback(500, "DB error", err);
+                earnPoints(order);
+            });
+        };
+
+        // 5. approved: give points (1 point per 10 baht)
+        const earnPoints = (order) => {
+            const paid = Number(order.original_price) - Number(order.discount_amount);
+            const earned = Math.floor(Math.round(paid * 100) / 1000);
+            const sql = `
+                INSERT IGNORE INTO point_transactions
+                (user_id, order_id, event_key, type, points_delta)
+                VALUES (?, ?, ?, 'Earn', ?)
+            `;
+            const values = [order.user_id, order.order_id, 'ORDER_' + order.order_id, earned];
+
+            db.query(sql, values, (err) => {
+                if (err) return rollback(500, "DB error", err);
+                commit({ payment_id: payment_id, status: status });
+            });
+        };
+    });
+});
+
 module.exports = router;
