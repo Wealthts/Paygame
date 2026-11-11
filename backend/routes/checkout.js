@@ -17,29 +17,29 @@ router.post('/', verifyToken, (req, res) => {
     const { package_id, player_uid, server_code, coupon_id, use_coins = false, method } = req.body;
 
     if (!Number.isInteger(package_id) || package_id <= 0) {
-        return res.status(400).send("Invalid package ID");
+        return res.status(400).send('Invalid package ID');
     }
 
     if (typeof player_uid !== 'string' || !player_uid.trim() || player_uid.length > 100) {
-        return res.status(400).send("Invalid player UID");
+        return res.status(400).send('Invalid player UID');
     }
 
     if (coupon_id != null && (!Number.isInteger(coupon_id) || coupon_id <= 0)) {
-        return res.status(400).send("Invalid coupon");
+        return res.status(400).send('Invalid coupon');
     }
 
     if (typeof use_coins !== 'boolean') {
-        return res.status(400).send("Invalid use_coins");
+        return res.status(400).send('Invalid use_coins');
     }
 
     if (!(method in FEES)) {
-        return res.status(400).send("Invalid payment method");
+        return res.status(400).send('Invalid payment method');
     }
 
     con.getConnection((err, db) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         // undo everything and send an error
@@ -59,7 +59,7 @@ router.post('/', verifyToken, (req, res) => {
         // 1. lock the user so coins and coupons can't be used twice at the same time
         const lockUser = () => {
             db.query('SELECT user_id FROM users WHERE user_id = ? FOR UPDATE', [user_id], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 findPackage();
             });
         };
@@ -76,13 +76,13 @@ router.post('/', verifyToken, (req, res) => {
             `;
 
             db.query(sql, [package_id], (err, result) => {
-                if (err) return rollback(500, "DB error", err);
-                if (result.length !== 1) return rollback(404, "Package not found");
+                if (err) return rollback(500, 'DB error', err);
+                if (result.length !== 1) return rollback(404, 'Package not found');
 
                 pack = result[0];
 
                 if (pack.requires_server === 1 && !server_code) {
-                    return rollback(400, "Server code required");
+                    return rollback(400, 'Server code required');
                 }
 
                 if (coupon_id == null) return checkCoins();
@@ -92,47 +92,55 @@ router.post('/', verifyToken, (req, res) => {
 
         // 3. check the coupon
         const findCoupon = () => {
-            db.query('SELECT * FROM coupons WHERE coupon_id = ? FOR UPDATE', [coupon_id], (err, result) => {
-                if (err) return rollback(500, "DB error", err);
-                if (result.length === 0) return rollback(404, "Coupon not found");
+            db.query(
+                'SELECT * FROM coupons WHERE coupon_id = ? FOR UPDATE',
+                [coupon_id],
+                (err, result) => {
+                    if (err) return rollback(500, 'DB error', err);
+                    if (result.length === 0) return rollback(404, 'Coupon not found');
 
-                coupon = result[0];
+                    coupon = result[0];
 
-                // how many of this coupon the user owns but hasn't used
-                const ownedSQL = `
+                    // how many of this coupon the user owns but hasn't used
+                    const ownedSQL = `
                     SELECT COUNT(*) AS owned
                     FROM user_coupons
                     WHERE user_id = ? AND coupon_id = ? AND used_at IS NULL
                 `;
 
-                db.query(ownedSQL, [user_id, coupon_id], (err, owned) => {
-                    if (err) return rollback(500, "DB error", err);
+                    db.query(ownedSQL, [user_id, coupon_id], (err, owned) => {
+                        if (err) return rollback(500, 'DB error', err);
 
-                    // pending orders using this coupon (everyone, and this user)
-                    const pendingSQL = `
+                        // pending orders using this coupon (everyone, and this user)
+                        const pendingSQL = `
                         SELECT COUNT(*) AS all_pending,
                                COALESCE(SUM(user_id = ?), 0) AS my_pending
                         FROM orders
                         WHERE coupon_id = ? AND status = 'Pending'
                     `;
 
-                    db.query(pendingSQL, [user_id, coupon_id], (err, pending) => {
-                        if (err) return rollback(500, "DB error", err);
+                        db.query(pendingSQL, [user_id, coupon_id], (err, pending) => {
+                            if (err) return rollback(500, 'DB error', err);
 
-                        if (Number(owned[0].owned) - Number(pending[0].my_pending) <= 0) {
-                            return rollback(400, "Coupon is unavailable");
-                        }
+                            if (Number(owned[0].owned) - Number(pending[0].my_pending) <= 0) {
+                                return rollback(400, 'Coupon is unavailable');
+                            }
 
-                        const priceSatang = Math.round(Number(pack.price) * 100);
-                        const problem = couponProblem(coupon, priceSatang, Number(pending[0].all_pending));
+                            const priceSatang = Math.round(Number(pack.price) * 100);
+                            const problem = couponProblem(
+                                coupon,
+                                priceSatang,
+                                Number(pending[0].all_pending),
+                            );
 
-                        if (problem) return rollback(400, problem);
+                            if (problem) return rollback(400, problem);
 
-                        couponSatang = couponDiscount(coupon, priceSatang);
-                        checkCoins();
+                            couponSatang = couponDiscount(coupon, priceSatang);
+                            checkCoins();
+                        });
                     });
-                });
-            });
+                },
+            );
         };
 
         // 4. work out coins and the final price (10 coins = 1 baht)
@@ -144,14 +152,18 @@ router.post('/', verifyToken, (req, res) => {
             `;
 
             db.query(sql, [user_id], (err, result) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
 
                 const balance = Number(result[0].balance);
                 const priceSatang = Math.round(Number(pack.price) * 100);
                 const afterCoupon = priceSatang - couponSatang;
-                const spent = use_coins ? Math.max(0, Math.min(balance, Math.floor(afterCoupon / 10))) : 0;
+                const spent = use_coins
+                    ? Math.max(0, Math.min(balance, Math.floor(afterCoupon / 10)))
+                    : 0;
                 const discountSatang = couponSatang + spent * 10;
-                const feeSatang = Math.round((priceSatang - discountSatang) * FEES[method] / 10000);
+                const feeSatang = Math.round(
+                    ((priceSatang - discountSatang) * FEES[method]) / 10000,
+                );
                 const totalSatang = priceSatang - discountSatang + feeSatang;
 
                 createOrder({ balance, spent, discountSatang, feeSatang, totalSatang });
@@ -170,15 +182,24 @@ router.post('/', verifyToken, (req, res) => {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?)
             `;
             const values = [
-                user_id, package_id, player_uid.trim(), server_code || '',
-                pack.game_name, pack.package_name, pack.price,
-                money.discountSatang / 100, money.totalSatang / 100,
-                coupon ? coupon.coupon_id : null, coupon ? coupon.code : null,
-                money.spent, couponSatang / 100, money.feeSatang / 100
+                user_id,
+                package_id,
+                player_uid.trim(),
+                server_code || '',
+                pack.game_name,
+                pack.package_name,
+                pack.price,
+                money.discountSatang / 100,
+                money.totalSatang / 100,
+                coupon ? coupon.coupon_id : null,
+                coupon ? coupon.code : null,
+                money.spent,
+                couponSatang / 100,
+                money.feeSatang / 100,
             ];
 
             db.query(sql, values, (err, result) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 spendCoins(result.insertId, money);
             });
         };
@@ -194,7 +215,7 @@ router.post('/', verifyToken, (req, res) => {
             `;
 
             db.query(sql, [user_id, order_id, 'SPEND_' + order_id, -money.spent], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
                 createPayment(order_id, money);
             });
         };
@@ -207,10 +228,10 @@ router.post('/', verifyToken, (req, res) => {
             `;
 
             db.query(sql, [order_id, randomUUID(), method, money.totalSatang / 100], (err) => {
-                if (err) return rollback(500, "DB error", err);
+                if (err) return rollback(500, 'DB error', err);
 
                 db.commit((err) => {
-                    if (err) return rollback(500, "DB error", err);
+                    if (err) return rollback(500, 'DB error', err);
                     db.release();
 
                     return res.status(201).json({
@@ -222,7 +243,7 @@ router.post('/', verifyToken, (req, res) => {
                         fee_amount: money.feeSatang / 100,
                         spent_points: money.spent,
                         points_balance: money.balance - money.spent,
-                        coupon_id: coupon ? coupon.coupon_id : null
+                        coupon_id: coupon ? coupon.coupon_id : null,
                     });
                 });
             });
@@ -233,7 +254,7 @@ router.post('/', verifyToken, (req, res) => {
             if (err) {
                 db.release();
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
             lockUser();
         });

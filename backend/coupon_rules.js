@@ -6,12 +6,12 @@ const rewards = {
     r1: { code: 'REWARD20', cost: 200 },
     r2: { code: 'REWARD50', cost: 450 },
     r3: { code: 'REWARD5P', cost: 800 },
-    r4: { code: 'REWARD150', cost: 1500 }
+    r4: { code: 'REWARD150', cost: 1500 },
 };
 
 // Reward coupons can only be bought with coins, not claimed by typing the code.
 function isRewardCode(code) {
-    return Object.values(rewards).some(reward => reward.code === code);
+    return Object.values(rewards).some((reward) => reward.code === code);
 }
 
 function toSatang(baht) {
@@ -39,7 +39,7 @@ function couponDiscount(coupon, priceSatang) {
     let discount;
 
     if (coupon.discount_type === 'percent') {
-        discount = Math.floor(priceSatang * Number(coupon.discount_value) / 100);
+        discount = Math.floor((priceSatang * Number(coupon.discount_value)) / 100);
     } else {
         discount = toSatang(coupon.discount_value);
     }

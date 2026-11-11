@@ -30,34 +30,45 @@ class _PurchaseHistoryViewState extends State<PurchaseHistoryView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ประวัติการซื้อ'), actions: [IconButton(onPressed: _reload, icon: const Icon(Icons.refresh))]),
+      appBar: AppBar(
+        title: const Text('ประวัติการซื้อ'),
+        actions: [
+          IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
+        ],
+      ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _orders,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text('${snapshot.error}'));
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('${snapshot.error}'));
+          }
           final orders = snapshot.data ?? [];
-          if (orders.isEmpty) return const Center(child: Text('ยังไม่มีรายการซื้อ'));
+          if (orders.isEmpty) {
+            return const Center(child: Text('ยังไม่มีรายการซื้อ'));
+          }
           return ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(
-                      '${order['game_name_snapshot']} · ${order['package_name_snapshot']}',
-                    ),
-                    subtitle: Text(
-                      'คำสั่งซื้อ GP-${order['order_id']}\n'
-                      'ชำระ ฿${order['total_amount']} · สถานะ ${order['status']}',
-                    ),
-                    isThreeLine: true,
-                    trailing: Text('${order['status']}'),
+            padding: const EdgeInsets.all(12),
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final order = orders[index];
+              return Card(
+                child: ListTile(
+                  title: Text(
+                    '${order['game_name_snapshot']} · ${order['package_name_snapshot']}',
                   ),
-                );
-              },
-            );
+                  subtitle: Text(
+                    'คำสั่งซื้อ GP-${order['order_id']}\n'
+                    'ชำระ ฿${order['total_amount']} · สถานะ ${order['status']}',
+                  ),
+                  isThreeLine: true,
+                  trailing: Text('${order['status']}'),
+                ),
+              );
+            },
+          );
         },
       ),
     );

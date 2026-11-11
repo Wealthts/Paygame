@@ -31,10 +31,7 @@ class _AdminShellViewState extends State<AdminShellView> {
         Tab(icon: Icon(Icons.sports_esports_outlined), text: 'Games'),
         Tab(icon: Icon(Icons.inventory_2_outlined), text: 'Packages'),
       ],
-      children: [
-        AdminGamesView(),
-        AdminPackagesView(),
-      ],
+      children: [AdminGamesView(), AdminPackagesView()],
     ),
     AdminTabGroupView(
       tabs: [

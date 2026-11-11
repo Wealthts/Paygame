@@ -16,7 +16,9 @@ class PaymentService {
   static Future<List<Map<String, dynamic>>> listForAdmin() async {
     final response = await ApiService.get('/payments');
     if (response is! List) throw Exception('Invalid payments response');
-    return response.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return response
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
   }
 
   static Future<void> updateStatus(int paymentId, String status) async {

@@ -8,18 +8,18 @@ const router = express.Router();
 router.get('/', verifyToken, (req, res) => {
     const user_id = req.user.id;
     let values = [];
-    let sql = "SELECT * FROM orders ";
+    let sql = 'SELECT * FROM orders ';
 
     if (req.user.role !== 'admin') {
-        sql += "WHERE user_id = ? ";
+        sql += 'WHERE user_id = ? ';
         values.push(user_id);
     }
-    sql += "ORDER BY created_at DESC";
+    sql += 'ORDER BY created_at DESC';
 
     con.query(sql, values, (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
         return res.json(result);
     });
@@ -30,31 +30,31 @@ router.get('/:id', verifyToken, (req, res) => {
     const id = req.params.id;
     const user_id = req.user.id;
     let values = [id];
-    let sql = "SELECT * FROM orders WHERE order_id = ? ";
+    let sql = 'SELECT * FROM orders WHERE order_id = ? ';
 
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
-        return res.status(400).send("Invalid order ID");
+        return res.status(400).send('Invalid order ID');
     }
 
     if (req.user.role !== 'admin') {
-        sql += "AND user_id = ?";
+        sql += 'AND user_id = ?';
         values.push(user_id);
     }
 
     con.query(sql, values, (err, result) => {
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length !== 1) {
-            return res.status(404).send("Order not found");
+            return res.status(404).send('Order not found');
         }
         return res.json(result[0]);
     });
 });
 
-router.put('/:id/complete', verifyToken, verifyAdmin, (req,res) => {
+router.put('/:id/complete', verifyToken, verifyAdmin, (req, res) => {
     res.status(409).send('Approve the pending payment to complete this order');
 });
 
@@ -77,15 +77,14 @@ router.post('/', verifyToken, (req, res) => {
     `;
 
     if (!package_id || !player_uid) {
-        return res.status(400).send("Please fill all fileds");
+        return res.status(400).send('Please fill all fileds');
     }
 
     if (!Number.isInteger(Number(package_id)) || Number(package_id) <= 0) {
-        return res.status(400).send("Invalid package ID");
+        return res.status(400).send('Invalid package ID');
     }
 
     con.query(sql, [package_id], (err, result) => {
-
         const insertSQL = `
             INSERT INTO orders (
                 user_id, package_id, player_uid, 
@@ -98,18 +97,18 @@ router.post('/', verifyToken, (req, res) => {
 
         if (err) {
             console.error(err);
-            return res.status(500).send("DB error");
+            return res.status(500).send('DB error');
         }
 
         if (result.length !== 1) {
-            return res.status(404).send("Package not found");
+            return res.status(404).send('Package not found');
         }
 
         const item = result[0];
 
         // check server code
         if (item.requires_server === 1 && !server_code) {
-            return res.status(400).send("Server code requires");
+            return res.status(400).send('Server code requires');
         }
 
         const user_id = req.user.id;
@@ -119,23 +118,29 @@ router.post('/', verifyToken, (req, res) => {
         const final_server_code = server_code || '';
 
         const values = [
-            user_id, item.package_id, player_uid,
-            final_server_code, item.game_name,
-            item.package_name, original_price,
-            discount_amount, total_amount, "Pending"
+            user_id,
+            item.package_id,
+            player_uid,
+            final_server_code,
+            item.game_name,
+            item.package_name,
+            original_price,
+            discount_amount,
+            total_amount,
+            'Pending',
         ];
 
         con.query(insertSQL, values, (err, result) => {
             if (err) {
                 console.error(err);
-                return res.status(500).send("DB error");
+                return res.status(500).send('DB error');
             }
 
             return res.status(201).json({
-                message: "Order created successfully",
+                message: 'Order created successfully',
                 order_id: result.insertId,
                 total_amount: total_amount,
-                status: "Pending"
+                status: 'Pending',
             });
         });
     });
