@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/controllers/paygame_controller.dart';
 import 'package:frontend/models/paygame_models.dart';
@@ -21,6 +22,7 @@ void main() {
   late FakeBackend backend;
 
   setUp(() {
+    FlutterSecureStorage.setMockInitialValues({});
     originalClient = ApiService.client;
     originalTokenStore = ApiService.tokenStore;
     tokenStore = MemoryTokenStore();

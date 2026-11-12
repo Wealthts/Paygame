@@ -131,7 +131,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   Future<void> toggleActiveStatus(UserModel user, bool newStatus) async {
     // 1. ป้องกันไม่ให้กดระงับ Admin
     if (user.role.toString().toLowerCase() == 'admin') {
-      _showSnackBar('ไม่สามารถระงับการใช้งานบัญชี Admin ได้', Colors.redAccent);
+      _showSnackBar('Cannot suspend Admin account', Colors.redAccent);
       return;
     }
 
@@ -150,7 +150,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
       });
 
       _showSnackBar(
-        '${newStatus ? "เปิด" : "ระงับ"} การใช้งานบัญชี ${user.username} เรียบร้อย',
+        '${newStatus ? "Activated" : "Suspended"} account ${user.username} successfully',
         newStatus ? Colors.green : Colors.orange,
       );
     } catch (e) {
@@ -160,7 +160,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
           user.isActive = oldStatus;
         });
         _showSnackBar(
-          'เกิดข้อผิดพลาด: ${e.toString().replaceAll('Exception: ', '')}',
+          'Error occurred: ${e.toString().replaceAll('Exception: ', '')}',
           Colors.red,
         );
       }
@@ -170,14 +170,17 @@ class _AdminUsersViewState extends State<AdminUsersView> {
   // ฟังก์ชันเปลี่ยนบทบาท Role
   Future<void> toggleRole(UserModel user) async {
     if (user.role == 'admin') {
-      _showSnackBar('ไม่สามารถเปลี่ยนบทบาทของบัญชี Admin ได้', Colors.orange);
+      _showSnackBar(
+        'Cannot change the role of an Admin account',
+        Colors.orange,
+      );
       return;
     }
 
     try {
       await ApiService.put('/users/${user.userId}/role', {'role': 'admin'});
     } catch (e) {
-      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
+      _showSnackBar('Error occurred: $e', Colors.red);
     }
   }
 
@@ -188,7 +191,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('แก้ไขข้อมูล: ${user.username}'),
+        title: Text('Edit Profile: ${user.username}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -205,7 +208,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ยกเลิก'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -235,15 +238,15 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
                   // ดึงรายการผู้ใช้ใหม่ทั้งหมดทันที
                   await fetchUsers();
-                  _showSnackBar('แก้ไขข้อมูลเรียบร้อย', Colors.green);
+                  _showSnackBar('Edit profile successful', Colors.green);
                 }
               } catch (e) {
                 if (mounted) {
-                  _showSnackBar('แก้ไขข้อมูลไม่สำเร็จ: $e', Colors.red);
+                  _showSnackBar('Failed to edit profile: $e', Colors.red);
                 }
               }
             },
-            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -256,18 +259,18 @@ class _AdminUsersViewState extends State<AdminUsersView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('รีเซ็ตรหัสผ่าน: ${user.username}'),
+        title: Text('Reset Password: ${user.username}'),
         content: TextField(
           controller: pwdCtrl,
           obscureText: true,
           decoration: const InputDecoration(
-            labelText: 'รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)',
+            labelText: 'new password (min 6 chars)',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ยกเลิก'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -280,12 +283,15 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                 await ApiService.put('/users/${user.userId}/reset-password', {
                   'new_password': pwdCtrl.text.trim(),
                 });
-                _showSnackBar('ตั้งรหัสผ่านใหม่สำเร็จ', Colors.green);
+                _showSnackBar('Reset password successful', Colors.green);
               } catch (e) {
-                _showSnackBar('เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน', Colors.red);
+                _showSnackBar(
+                  'Error occurred while resetting password',
+                  Colors.red,
+                );
               }
             },
-            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -306,7 +312,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('จัดการผู้ใช้งาน (User Management)'),
+        title: const Text('User Management'),
         backgroundColor: const Color(0xFFA60C19),
         foregroundColor: Colors.white,
       ),
@@ -319,16 +325,16 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                   // Stat Cards
                   Row(
                     children: [
-                      _buildStatCard('ทั้งหมด', '$total', Colors.blue),
+                      _buildStatCard('total', '$total', Colors.blue),
                       const SizedBox(width: 8),
                       _buildStatCard(
-                        'ใช้งานปกติ',
+                        'active',
                         '$activeCount',
                         Colors.green,
                       ),
                       const SizedBox(width: 8),
                       _buildStatCard(
-                        'ถูกระงับ',
+                        'inactive',
                         '${total - activeCount}',
                         Colors.red,
                       ),
@@ -341,7 +347,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                     controller: searchController,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'ค้นหาด้วย ชื่อ/อีเมล...',
+                      hintText: 'Search by Name/Email...',
                       prefixIcon: const Icon(Icons.search),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -366,7 +372,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                           items: const [
                             DropdownMenuItem(
                               value: 'All',
-                              child: Text('ทุก Role'),
+                              child: Text('All Roles'),
                             ),
                             DropdownMenuItem(
                               value: 'admin',
@@ -392,7 +398,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                           items: const [
                             DropdownMenuItem(
                               value: 'All',
-                              child: Text('ทุกสถานะ'),
+                              child: Text('All Statuses'),
                             ),
                             DropdownMenuItem(
                               value: 'Active',
@@ -414,7 +420,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                   // User List View
                   Expanded(
                     child: filteredList.isEmpty
-                        ? const Center(child: Text('ไม่พบข้อมูลผู้ใช้งาน'))
+                        ? const Center(child: Text('No user data found'))
                         : ListView.builder(
                             itemCount: filteredList.length,
                             itemBuilder: (context, index) {
@@ -452,7 +458,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // สวิตช์ปุ่มปิด/เปิด (แสดงสีเขียวตรงตาม DB)[cite: 7]
+                                      // Switch button to toggle active status (green color based on DB)[cite: 7]
                                       Switch(
                                         value: user.isActive,
                                         activeThumbColor: Colors.green,
@@ -472,16 +478,16 @@ class _AdminUsersViewState extends State<AdminUsersView> {
                                         itemBuilder: (context) => [
                                           const PopupMenuItem(
                                             value: 'edit',
-                                            child: Text('แก้ไขข้อมูล'),
+                                            child: Text('Edit Profile'),
                                           ),
                                           const PopupMenuItem(
                                             value: 'reset',
-                                            child: Text('รีเซ็ตรหัสผ่าน'),
+                                            child: Text('Reset Password'),
                                           ),
                                           if (!isAdmin)
                                             const PopupMenuItem(
                                               value: 'role',
-                                              child: Text('เปลี่ยนเป็น Admin'),
+                                              child: Text('Change to Admin'),
                                             ),
                                         ],
                                       ),

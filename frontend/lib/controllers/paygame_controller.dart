@@ -119,7 +119,7 @@ class PaygameController extends ChangeNotifier {
 
     // Save JWT token[cite: 13]
     authToken = token; //[cite: 13]
-    coupons.clear(); //[cite: 13]
+    _coupons.clear(); //[cite: 13]
     userPointsBalance = 0; //[cite: 13]
     pointHistory.clear(); //[cite: 13]
     await refreshWallet(); //[cite: 13]
@@ -149,7 +149,7 @@ class PaygameController extends ChangeNotifier {
       latestOrder = null; //[cite: 13]
       userPointsBalance = 0; //[cite: 13]
       pointHistory.clear(); //[cite: 13]
-      coupons.clear(); //[cite: 13]
+      _coupons.clear(); //[cite: 13]
       recordedOrders.clear(); //[cite: 13]
       walletError = null; //[cite: 13]
 
@@ -164,7 +164,7 @@ class PaygameController extends ChangeNotifier {
       return; //[cite: 13]
     }
     latestOrder = order; //[cite: 13]
-    coupons.removeWhere((coupon) => coupon.id == order.couponId); //[cite: 13]
+    _coupons.removeWhere((coupon) => coupon.id == order.couponId); //[cite: 13]
     userPointsBalance = order.pointsBalance; //[cite: 13]
 
     final dateStr =
@@ -212,8 +212,8 @@ class PaygameController extends ChangeNotifier {
         ApiService.get('/points/history'), //[cite: 13]
       ]);
       if (token != authToken) return; //[cite: 13]
-      coupons.clear(); //[cite: 13]
-      coupons.addAll(
+      _coupons.clear(); //[cite: 13]
+      _coupons.addAll(
         //[cite: 13]
         (results[0] as List).map(
           //[cite: 13]
