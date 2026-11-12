@@ -35,6 +35,7 @@ void main() {
     ApiService.tokenStore = originalTokenStore;
   });
 
+  // fone
   test('registration sends the expected unauthenticated request', () async {
     await AuthService.register(
       username: 'player',
@@ -53,6 +54,7 @@ void main() {
     expect(request.headers.containsKey('authorization'), isFalse);
   });
 
+  // fone
   test('login loads wallet data and logout clears the account state', () async {
     final controller = PaygameController();
     addTearDown(controller.dispose);
