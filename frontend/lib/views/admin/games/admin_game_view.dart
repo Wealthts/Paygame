@@ -206,8 +206,7 @@ class _AdminGamesViewState extends State<AdminGamesView> {
                       unit: game?.unit ?? '',
                       uidPattern: patternController.text.trim(),
                       requiresServer: requiresServer,
-                      isActive: isActive,
-                      isPopular: game?.isPopular ?? false,
+                      isActive: isActive
                     );
 
                     Navigator.pop(dialogContext, newGame);

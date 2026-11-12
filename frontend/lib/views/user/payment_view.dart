@@ -1,4 +1,4 @@
-part of 'game_detail_view.dart';
+part of 'package_view.dart';
 
 enum PaygameMethod {
   qr('QR พร้อมเพย์', 'ไม่มีค่าธรรมเนียม', Icons.qr_code_2, 0),

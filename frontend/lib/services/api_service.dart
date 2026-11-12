@@ -4,6 +4,28 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+abstract interface class ApiTokenStore {
+  Future<String?> readToken();
+  Future<void> writeToken(String token);
+  Future<void> deleteToken();
+}
+
+class SecureApiTokenStore implements ApiTokenStore {
+  const SecureApiTokenStore(this._storage);
+
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<String?> readToken() => _storage.read(key: 'auth_token');
+
+  @override
+  Future<void> writeToken(String token) =>
+      _storage.write(key: 'auth_token', value: token);
+
+  @override
+  Future<void> deleteToken() => _storage.delete(key: 'auth_token');
+}
+
 class ApiService {
   // Override for a phone or a deployed server, e.g.
   // --dart-define=API_BASE_URL=http://192.168.1.10:3000/api
@@ -15,20 +37,22 @@ class ApiService {
   static const Duration timeoutDuration = Duration(seconds: 15);
   // Secure Storage
   static const FlutterSecureStorage storage = FlutterSecureStorage();
+  static http.Client client = http.Client();
+  static ApiTokenStore tokenStore = SecureApiTokenStore(storage);
 
   // Get JWT Token
   static Future<String?> getToken() async {
-    return await storage.read(key: 'auth_token');
+    return tokenStore.readToken();
   }
 
   // Save JWT Token
   static Future<void> saveToken(String token) async {
-    await storage.write(key: 'auth_token', value: token);
+    await tokenStore.writeToken(token);
   }
 
   // Delete JWT Token
   static Future<void> deleteToken() async {
-    await storage.delete(key: 'auth_token');
+    await tokenStore.deleteToken();
   }
 
   // Create Headers
@@ -100,7 +124,7 @@ class ApiService {
     final headers = await getHeaders(requiresAuth: requiresAuth);
 
     return await sendRequest(
-      () => http.get(Uri.parse('$baseUrl$endpoint'), headers: headers),
+      () => client.get(Uri.parse('$baseUrl$endpoint'), headers: headers),
     );
   }
 
@@ -113,7 +137,7 @@ class ApiService {
     final headers = await getHeaders(requiresAuth: requiresAuth);
 
     return await sendRequest(
-      () => http.post(
+      () => client.post(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: jsonEncode(body),
@@ -130,7 +154,7 @@ class ApiService {
     final headers = await getHeaders(requiresAuth: requiresAuth);
 
     return await sendRequest(
-      () => http.put(
+      () => client.put(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: jsonEncode(body),
@@ -146,7 +170,7 @@ class ApiService {
     final headers = await getHeaders(requiresAuth: requiresAuth);
 
     return await sendRequest(
-      () => http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers),
+      () => client.delete(Uri.parse('$baseUrl$endpoint'), headers: headers),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'game_detail_view.dart';
+import 'package_view.dart';
 import 'package:frontend/services/order_service.dart';
 
 class PurchaseHistoryView extends StatefulWidget {

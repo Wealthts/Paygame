@@ -1,6 +1,7 @@
 class UserModel {
   final int userId;
   final String username;
+  final String email;
   final String displayName;
   final String role;
   final bool isActive;
@@ -10,6 +11,7 @@ class UserModel {
     required this.userId,
     required this.username,
     required this.displayName,
+    required this.email,
     required this.role,
     required this.isActive,
     required this.createdAt,
@@ -19,11 +21,24 @@ class UserModel {
     return UserModel(
       userId: json['user_id'] ?? 0,
       username: json['username'] ?? '',
+      email: json['email'] ?? '',
       displayName: json['display_name'] ?? '',
       role: json['role'] ?? 'user',
       isActive: json['is_active'] == 1,
       createdAt: json['created_at'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'username': username,
+      'email': email,
+      'display_name': displayName,
+      'role': role,
+      'is_active': isActive ? 1 : 0,
+      'created_at': createdAt,
+    };
   }
 }
 
@@ -36,7 +51,6 @@ class GameModel {
   final String uidPattern;
   final bool requiresServer;
   final bool isActive;
-  final bool isPopular;
 
   GameModel({
     required this.gameId,
@@ -46,22 +60,22 @@ class GameModel {
     required this.unit,
     required this.uidPattern,
     required this.requiresServer,
-    required this.isActive,
-    this.isPopular = false,
+    required this.isActive
   });
 
   // Convert JSON to GameModel
   factory GameModel.fromJson(Map<String, dynamic> json) {
+    final name = json['game_name'] ?? '';
+    final short = json['short_name'] ?? name;
     return GameModel(
       gameId: json['game_id'].toString(),
-      gameName: json['game_name'] ?? '',
-      shortName: json['game_name'] ?? '',
+      gameName: name,
+      shortName: short,
       category: json['category'] ?? '',
-      unit: '',
+      unit: json['unit'] ?? '',
       uidPattern: json['uid_pattern'] ?? '',
       requiresServer: _readBool(json['requires_server']),
       isActive: _readBool(json['is_active']),
-      isPopular: false,
     );
   }
 

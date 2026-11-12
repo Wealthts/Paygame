@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'views/user/coupons_view.dart';
-import 'package:frontend/views/user/game_detail_view.dart';
+import 'package:frontend/views/user/package_view.dart';
 import 'package:provider/provider.dart';
 
 import 'package:frontend/controllers/paygame_controller.dart';
@@ -9,7 +9,7 @@ import 'package:frontend/theme/app_theme.dart';
 
 import 'package:frontend/views/login_view.dart';
 import 'package:frontend/views/admin/admin_shell_view.dart';
-import 'package:frontend/views/user/paygame_shell_view.dart';
+import 'package:frontend/views/user/homepage_view.dart';
 import 'package:frontend/views/user/purchase_history_view.dart';
 import 'package:frontend/views/user/reward_history_view.dart';
 import 'package:frontend/services/api_service.dart'; // 💡 เพิ่ม import api_service
