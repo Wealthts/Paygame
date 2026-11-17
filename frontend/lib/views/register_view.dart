@@ -199,6 +199,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textInputAction: TextInputAction.next,
               ),
 
+              const SizedBox(height: s16),
+
               // Password
               buildInputField(
                 label: 'password',
@@ -433,6 +435,125 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Terms and Conditions Dialog
+  void _showTermsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.gavel_rounded, color: red),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Terms and Conditions',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: const SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Last Updated: November 2026',
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '1. Acceptance of Terms',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'By creating an account and using GamePay, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, please refrain from using our services.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '2. Account Registration & Security',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'You must provide accurate and complete information during registration. You are solely responsible for maintaining the confidentiality of your password and for all activities occurring under your account.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '3. Game Top-Up & Player UID Accuracy',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Please verify your Player UID, Server, and selected package before confirming any payment. GamePay is not responsible for top-ups sent to an incorrect UID or server entered by the user.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '4. Payments & No-Refund Policy',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'All purchases of virtual currency, game credits, and digital packages are final and non-refundable once delivered to the game account, except in cases of verified system failure.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '5. Reward Points & Coupons',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Reward points and promotional coupons hold no cash value, cannot be transferred between accounts, and are subject to expiration dates and minimum spend requirements specified in each promotion.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '6. Prohibited Conduct & Account Suspension',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Any fraudulent payment, chargeback abuse, or exploitation of system bugs will result in immediate account suspension and permanent revocation of reward balances.',
+                  style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(color: Colors.black54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                isAcceptedTerms = true;
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Terms and Conditions
   Widget buildTermsRow() {
     return Row(
@@ -467,9 +588,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
 
               GestureDetector(
-                onTap: () {
-                  // TODO: Open Terms and Conditions
-                },
+                onTap: _showTermsDialog,
                 child: const Text(
                   'Terms and Conditions',
                   style: TextStyle(

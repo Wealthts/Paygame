@@ -72,4 +72,24 @@ class AuthService {
 
     debugPrint('JWT Token Removed');
   }
+
+  // Forgot Password: ส่งรหัสยืนยัน 6 หลักไปที่อีเมล
+  static Future<dynamic> forgotPassword(String email) async {
+    return await ApiService.post('/forgot-password', {
+      'email': email,
+    }, requiresAuth: false);
+  }
+
+  // Reset Password: ยืนยันรหัสจากอีเมลและตั้งรหัสผ่านใหม่
+  static Future<dynamic> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    return await ApiService.post('/reset-password', {
+      'email': email,
+      'code': code,
+      'new_password': newPassword,
+    }, requiresAuth: false);
+  }
 }
